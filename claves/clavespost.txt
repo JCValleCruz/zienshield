@@ -1,0 +1,6 @@
+📝 Datos de conexión:
+   Host: localhost
+   Puerto: 5432
+   Base de datos: zienshield_tenants
+   Usuario: zienshield_user
+   Contraseña: ZienShield2025!
