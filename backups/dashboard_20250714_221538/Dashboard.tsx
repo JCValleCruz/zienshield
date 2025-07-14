@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit } from 'lucide-react';
 import { apiService, Company, CreateCompanyData } from '../services/api';
-import SystemMetricsGrid from './SystemMetricsGrid';
 
 const Dashboard: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -358,12 +357,7 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* NUEVO: Métricas del Sistema ZienSHIELD - COMPACTO */}
-        <div className="mb-6">
-          <SystemMetricsGrid />
-        </div>
-
-        {/* Métricas Generales - Grid de 4 columnas igual que antes */}
+        {/* Métricas Generales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Empresas Registradas */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">

@@ -358,12 +358,12 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* NUEVO: Métricas del Sistema ZienSHIELD - COMPACTO */}
-        <div className="mb-6">
+        {/* NUEVO: Métricas del Sistema ZienSHIELD */}
+        <div className="mb-8">
           <SystemMetricsGrid />
         </div>
 
-        {/* Métricas Generales - Grid de 4 columnas igual que antes */}
+        {/* Métricas Generales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Empresas Registradas */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
