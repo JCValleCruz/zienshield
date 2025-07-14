@@ -113,50 +113,23 @@ const Dashboard: React.FC = () => {
     resetForm();
   };
 
-  const handleEditCompany = async (company: Company) => {
+  const handleEditCompany = (company: Company) => {
     setIsEditMode(true);
     setEditingCompany(company);
     setCompanyModalOpen(true);
     
-    try {
-      // Cargar datos completos de la empresa desde la API
-      console.log('🔍 Cargando datos completos de la empresa...');
-      const response = await apiService.getCompany(company.id);
-      
-      if (response.success) {
-        const fullCompanyData = response.data;
-        
-        // Precargar TODOS los datos del formulario
-        setFormData({
-          name: fullCompanyData.name,
-          sector: fullCompanyData.sector,
-          admin_name: fullCompanyData.admin_name,
-          admin_phone: fullCompanyData.admin_phone || '', // Cargar teléfono real
-          admin_email: fullCompanyData.admin_email,
-          admin_password: '' // Siempre vacío por seguridad
-        });
-        
-        console.log('✅ Datos completos cargados:', fullCompanyData);
-      } else {
-        throw new Error(response.error || 'Error cargando datos');
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos completos:', error);
-      
-      // Fallback: usar datos básicos disponibles
-      setFormData({
-        name: company.name,
-        sector: company.sector,
-        admin_name: company.admin_name,
-        admin_phone: '', // Campo vacío si no se pudo cargar
-        admin_email: company.admin_email,
-        admin_password: ''
-      });
-      
-      setCreateError('No se pudieron cargar todos los datos. Algunos campos pueden estar vacíos.');
-    }
+    // Precargar datos del formulario
+    setFormData({
+      name: company.name,
+      sector: company.sector,
+      admin_name: company.admin_name,
+      admin_phone: '', // No tenemos este campo en la respuesta, se debe cargar
+      admin_email: company.admin_email,
+      admin_password: '' // Por seguridad, siempre vacío
+    });
     
     setFormErrors({});
+    setCreateError(null);
     setShowPassword(false);
   };
 
@@ -203,11 +176,7 @@ const Dashboard: React.FC = () => {
     if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
     if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
     if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    
-    // Contraseña obligatoria solo para CREAR, opcional para EDITAR
-    if (!isEditMode && !formData.admin_password.trim()) {
-      errors.admin_password = 'La contraseña es obligatoria';
-    }
+    if (!formData.admin_password.trim()) errors.admin_password = 'La contraseña es obligatoria';
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -215,7 +184,7 @@ const Dashboard: React.FC = () => {
       errors.admin_email = 'El formato del email no es válido';
     }
 
-    // Validar longitud de contraseña (solo si se proporciona)
+    // Validar longitud de contraseña
     if (formData.admin_password && formData.admin_password.length < 6) {
       errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
     }
@@ -734,7 +703,7 @@ const Dashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-slate-300 mb-2">
                       Contraseña <span className="text-red-400">*</span>
                       {isEditMode && (
-                        <span className="text-slate-500 font-normal ml-2">(opcional - dejar vacío para mantener actual)</span>
+                        <span className="text-slate-500 font-normal ml-2">(dejar vacío para mantener actual)</span>
                       )}
                     </label>
                     <div className="relative">

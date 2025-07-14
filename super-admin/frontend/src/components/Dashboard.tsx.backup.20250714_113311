@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit } from 'lucide-react';
+import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff } from 'lucide-react';
 import { apiService, Company, CreateCompanyData } from '../services/api';
 
 const Dashboard: React.FC = () => {
@@ -12,13 +12,11 @@ const Dashboard: React.FC = () => {
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  // Estados para modal de agregar/editar empresa
-  const [companyModalOpen, setCompanyModalOpen] = useState(false);
+  // Estados para modal de agregar empresa
+  const [addCompanyModalOpen, setAddCompanyModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
   // Estado del formulario
   const [formData, setFormData] = useState<CreateCompanyData>({
@@ -68,7 +66,7 @@ const Dashboard: React.FC = () => {
     setDeleteConfirmText("");
   };
 
-  const confirmDeleteCompany = async () => {
+    const confirmDeleteCompany = async () => {
     if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
       return;
     }
@@ -105,69 +103,24 @@ const Dashboard: React.FC = () => {
     setDeleteConfirmText("");
   };
 
-  // Funciones para modal de agregar/editar empresa
+  // Funciones para modal de agregar empresa
   const handleAddCompany = () => {
-    setIsEditMode(false);
-    setEditingCompany(null);
-    setCompanyModalOpen(true);
-    resetForm();
-  };
-
-  const handleEditCompany = async (company: Company) => {
-    setIsEditMode(true);
-    setEditingCompany(company);
-    setCompanyModalOpen(true);
-    
-    try {
-      // Cargar datos completos de la empresa desde la API
-      console.log('🔍 Cargando datos completos de la empresa...');
-      const response = await apiService.getCompany(company.id);
-      
-      if (response.success) {
-        const fullCompanyData = response.data;
-        
-        // Precargar TODOS los datos del formulario
-        setFormData({
-          name: fullCompanyData.name,
-          sector: fullCompanyData.sector,
-          admin_name: fullCompanyData.admin_name,
-          admin_phone: fullCompanyData.admin_phone || '', // Cargar teléfono real
-          admin_email: fullCompanyData.admin_email,
-          admin_password: '' // Siempre vacío por seguridad
-        });
-        
-        console.log('✅ Datos completos cargados:', fullCompanyData);
-      } else {
-        throw new Error(response.error || 'Error cargando datos');
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos completos:', error);
-      
-      // Fallback: usar datos básicos disponibles
-      setFormData({
-        name: company.name,
-        sector: company.sector,
-        admin_name: company.admin_name,
-        admin_phone: '', // Campo vacío si no se pudo cargar
-        admin_email: company.admin_email,
-        admin_password: ''
-      });
-      
-      setCreateError('No se pudieron cargar todos los datos. Algunos campos pueden estar vacíos.');
-    }
-    
+    setAddCompanyModalOpen(true);
+    setFormData({
+      name: '',
+      sector: '',
+      admin_name: '',
+      admin_phone: '',
+      admin_email: '',
+      admin_password: ''
+    });
     setFormErrors({});
+    setCreateError(null);
     setShowPassword(false);
   };
 
-  const closeCompanyModal = () => {
-    setCompanyModalOpen(false);
-    setIsEditMode(false);
-    setEditingCompany(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
+  const closeAddCompanyModal = () => {
+    setAddCompanyModalOpen(false);
     setFormData({
       name: '',
       sector: '',
@@ -203,11 +156,7 @@ const Dashboard: React.FC = () => {
     if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
     if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
     if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    
-    // Contraseña obligatoria solo para CREAR, opcional para EDITAR
-    if (!isEditMode && !formData.admin_password.trim()) {
-      errors.admin_password = 'La contraseña es obligatoria';
-    }
+    if (!formData.admin_password.trim()) errors.admin_password = 'La contraseña es obligatoria';
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -215,7 +164,7 @@ const Dashboard: React.FC = () => {
       errors.admin_email = 'El formato del email no es válido';
     }
 
-    // Validar longitud de contraseña (solo si se proporciona)
+    // Validar longitud de contraseña
     if (formData.admin_password && formData.admin_password.length < 6) {
       errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
     }
@@ -242,45 +191,23 @@ const Dashboard: React.FC = () => {
       setIsCreating(true);
       setCreateError(null);
 
-      if (isEditMode && editingCompany) {
-        // Actualizar empresa existente
-        console.log('✏️ Actualizando empresa:', formData.name);
-        const response = await apiService.updateCompany(editingCompany.id, formData);
+      console.log('➕ Creando empresa:', formData.name);
+      const response = await apiService.createCompany(formData);
 
-        if (response.success) {
-          console.log('✅ Empresa actualizada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => prev.map(c => 
-            c.id === editingCompany.id ? response.data : c
-          ));
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" actualizada exitosamente!`);
-        }
-      } else {
-        // Crear nueva empresa
-        console.log('➕ Creando empresa:', formData.name);
-        const response = await apiService.createCompany(formData);
-
-        if (response.success) {
-          console.log('✅ Empresa creada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => [...prev, response.data]);
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
-        }
+      if (response.success) {
+        console.log('✅ Empresa creada exitosamente:', response.data);
+        
+        // Actualizar lista de empresas
+        setCompanies(prev => [...prev, response.data]);
+        
+        // Cerrar modal
+        closeAddCompanyModal();
+        
+        // Mostrar mensaje de éxito (opcional)
+        alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
       }
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('❌ Error creando empresa:', error);
       setCreateError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setIsCreating(false);
@@ -494,12 +421,8 @@ const Dashboard: React.FC = () => {
                       <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded text-sm transition-colors">
                         Ver Dashboard
                       </button>
-                      <button 
-                        onClick={() => handleEditCompany(company)}
-                        className="bg-slate-600 hover:bg-slate-500 text-white py-1.5 px-3 rounded text-sm transition-colors flex items-center space-x-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        <span>Editar</span>
+                      <button className="bg-slate-600 hover:bg-slate-500 text-white py-1.5 px-3 rounded text-sm transition-colors">
+                        Editar
                       </button>
                     </div>
                   </div>
@@ -561,28 +484,23 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Agregar/Editar Empresa */}
-      {companyModalOpen && (
+      {/* Modal de Agregar Empresa */}
+      {addCompanyModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 border border-slate-700 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Header del Modal */}
             <div className="flex items-center justify-between p-6 border-b border-slate-700">
               <div className="flex items-center">
-                <div className={`p-2 rounded-lg mr-3 ${isEditMode ? 'bg-blue-500/10' : 'bg-green-500/10'}`}>
-                  {isEditMode ? (
-                    <Edit className="h-6 w-6 text-blue-400" />
-                  ) : (
-                    <Plus className="h-6 w-6 text-green-400" />
-                  )}
+                <div className="p-2 bg-green-500/10 rounded-lg mr-3">
+                  <Plus className="h-6 w-6 text-green-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white">
-                  {isEditMode ? 'Editar Empresa' : 'Agregar Nueva Empresa'}
+                  Agregar Nueva Empresa
                 </h3>
               </div>
               <button
-                onClick={closeCompanyModal}
+                onClick={closeAddCompanyModal}
                 className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                title="Cerrar sin guardar"
               >
                 <X className="h-5 w-5 text-slate-400" />
               </button>
@@ -596,9 +514,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center">
                     <AlertTriangle className="h-5 w-5 text-red-400 mr-3" />
                     <div>
-                      <h4 className="text-red-400 font-medium">
-                        Error al {isEditMode ? 'actualizar' : 'crear'} empresa
-                      </h4>
+                      <h4 className="text-red-400 font-medium">Error al crear empresa</h4>
                       <p className="text-red-300 text-sm mt-1">{createError}</p>
                     </div>
                   </div>
@@ -733,16 +649,13 @@ const Dashboard: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
                       Contraseña <span className="text-red-400">*</span>
-                      {isEditMode && (
-                        <span className="text-slate-500 font-normal ml-2">(opcional - dejar vacío para mantener actual)</span>
-                      )}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={formData.admin_password}
                         onChange={(e) => handleInputChange('admin_password', e.target.value)}
-                        placeholder={isEditMode ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                        placeholder="Mínimo 6 caracteres"
                         className={`w-full bg-slate-700 border rounded px-3 py-2 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
                           formErrors.admin_password ? 'border-red-500' : 'border-slate-600'
                         }`}
@@ -772,12 +685,7 @@ const Dashboard: React.FC = () => {
                 <h5 className="text-slate-300 font-medium mb-2">Información:</h5>
                 <ul className="text-sm text-slate-400 space-y-1">
                   <li>• Los campos marcados con <span className="text-red-400">*</span> son obligatorios</li>
-                  {!isEditMode && (
-                    <li>• Se generará automáticamente un ID único para la empresa</li>
-                  )}
-                  {isEditMode && (
-                    <li>• Los cambios se guardarán inmediatamente al confirmar</li>
-                  )}
+                  <li>• Se generará automáticamente un ID único para la empresa</li>
                   <li>• El administrador podrá acceder al dashboard con estas credenciales</li>
                 </ul>
               </div>
@@ -786,7 +694,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-700">
                 <button
                   type="button"
-                  onClick={closeCompanyModal}
+                  onClick={closeAddCompanyModal}
                   disabled={isCreating}
                   className="px-4 py-2 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 text-white rounded-lg transition-colors"
                 >
@@ -795,25 +703,17 @@ const Dashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className={`px-6 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 ${
-                    isEditMode 
-                      ? 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-700' 
-                      : 'bg-green-600 hover:bg-green-700 disabled:bg-green-700'
-                  }`}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
                 >
                   {isCreating ? (
                     <>
                       <Loader className="animate-spin h-4 w-4" />
-                      <span>{isEditMode ? 'Actualizando...' : 'Creando...'}</span>
+                      <span>Creando...</span>
                     </>
                   ) : (
                     <>
-                      {isEditMode ? (
-                        <Edit className="h-4 w-4" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      <span>{isEditMode ? 'Actualizar Empresa' : 'Crear Empresa'}</span>
+                      <Plus className="h-4 w-4" />
+                      <span>Crear Empresa</span>
                     </>
                   )}
                 </button>

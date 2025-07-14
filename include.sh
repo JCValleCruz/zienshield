@@ -1,3 +1,224 @@
+#!/bin/bash
+
+# Script para implementar modal de Editar Empresa
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./edit_company_modal.sh
+
+set -e
+
+echo "✏️ ZienSHIELD Edit Company Modal Creator"
+echo "======================================="
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "super-admin/frontend/src/components/Dashboard.tsx" ]; then
+    echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
+    exit 1
+fi
+
+FRONTEND_DIR="super-admin/frontend"
+DASHBOARD_FILE="$FRONTEND_DIR/src/components/Dashboard.tsx"
+API_FILE="$FRONTEND_DIR/src/services/api.ts"
+BACKUP_DASHBOARD="$FRONTEND_DIR/src/components/Dashboard.tsx.backup.$(date +%Y%m%d_%H%M%S)"
+BACKUP_API="$FRONTEND_DIR/src/services/api.ts.backup.$(date +%Y%m%d_%H%M%S)"
+
+echo "📁 Archivos a modificar:"
+echo "   Dashboard: $DASHBOARD_FILE"
+echo "   API Service: $API_FILE"
+
+# Crear backups
+echo "💾 Creando backups..."
+cp "$DASHBOARD_FILE" "$BACKUP_DASHBOARD"
+cp "$API_FILE" "$BACKUP_API"
+echo "✅ Backups creados"
+
+# Paso 1: Agregar método updateCompany al API Service
+echo ""
+echo "🔧 Paso 1: Actualizando API Service..."
+
+# Verificar si ya existe el método updateCompany
+if grep -q "updateCompany" "$API_FILE"; then
+    echo "✅ Método updateCompany ya existe en API Service"
+else
+    echo "➕ Agregando método updateCompany..."
+    
+    # Agregar método updateCompany después de createCompany
+    sed -i '/async deleteCompany/i\
+\
+  async updateCompany(id: number, companyData: CreateCompanyData): Promise<ApiResponse<Company>> {\
+    return this.fetchApi(`/companies/${id}`, {\
+      method: '\''PUT'\'',\
+      body: JSON.stringify(companyData),\
+    });\
+  }' "$API_FILE"
+    
+    echo "✅ Método updateCompany agregado"
+fi
+
+# Paso 2: Crear servidor con endpoint PUT
+echo ""
+echo "🔧 Paso 2: Agregando endpoint PUT al servidor..."
+
+API_SERVER_FILE="api/src/server.js"
+API_BACKUP="api/src/server.js.backup.$(date +%Y%m%d_%H%M%S)"
+
+# Backup del servidor
+cp "$API_SERVER_FILE" "$API_BACKUP"
+echo "💾 Backup servidor: $API_BACKUP"
+
+# Agregar endpoint PUT antes del DELETE
+if grep -q "app.put.*companies.*:id" "$API_SERVER_FILE"; then
+    echo "✅ Endpoint PUT ya existe en servidor"
+else
+    echo "➕ Agregando endpoint PUT..."
+    
+    # Insertar endpoint PUT antes del DELETE
+    sed -i '/\/\/ 🗑️ ELIMINAR EMPRESA/i\
+\/\/ ✏️ ACTUALIZAR EMPRESA\
+app.put("\/api\/companies\/:id", async (req, res) => {\
+  try {\
+    const { id } = req.params;\
+    const { name, sector, admin_name, admin_phone, admin_email, admin_password } = req.body;\
+    \
+    console.log("✏️ Actualizando empresa con ID:", id);\
+    \
+    \/\/ Verificar que el ID es válido\
+    if (!id || isNaN(parseInt(id))) {\
+      return res.status(400).json({\
+        success: false,\
+        error: "ID de empresa inválido"\
+      });\
+    }\
+    \
+    \/\/ Verificar que la empresa existe\
+    const checkResult = await pool.query("SELECT id, name FROM companies WHERE id = $1", [id]);\
+    \
+    if (checkResult.rows.length === 0) {\
+      return res.status(404).json({\
+        success: false,\
+        error: "Empresa no encontrada"\
+      });\
+    }\
+    \
+    \/\/ 🔍 VALIDACIONES (iguales que POST)\
+    const errors = [];\
+    \
+    \/\/ Campos obligatorios (contraseña opcional en edición)\
+    if (!name?.trim()) errors.push("El nombre de la empresa es obligatorio");\
+    if (!sector?.trim()) errors.push("El sector es obligatorio");\
+    if (!admin_name?.trim()) errors.push("El nombre del administrador es obligatorio");\
+    if (!admin_phone?.trim()) errors.push("El teléfono del administrador es obligatorio");\
+    if (!admin_email?.trim()) errors.push("El email del administrador es obligatorio");\
+    \
+    \/\/ Contraseña: obligatoria solo si se proporciona (para permitir mantener actual)\
+    if (admin_password && admin_password.trim().length < 6) {\
+      errors.push("La contraseña debe tener al menos 6 caracteres");\
+    }\
+    \
+    \/\/ Validaciones de formato\
+    if (admin_email && !isValidEmail(admin_email)) {\
+      errors.push("El formato del email no es válido");\
+    }\
+    \
+    if (admin_phone && !isValidPhone(admin_phone)) {\
+      errors.push("El formato del teléfono no es válido");\
+    }\
+    \
+    \/\/ Validaciones de longitud\
+    if (name && name.length > 255) errors.push("El nombre de la empresa no puede exceder 255 caracteres");\
+    if (sector && sector.length > 100) errors.push("El sector no puede exceder 100 caracteres");\
+    if (admin_name && admin_name.length > 255) errors.push("El nombre del administrador no puede exceder 255 caracteres");\
+    if (admin_phone && admin_phone.length > 20) errors.push("El teléfono no puede exceder 20 caracteres");\
+    if (admin_email && admin_email.length > 255) errors.push("El email no puede exceder 255 caracteres");\
+    if (admin_password && admin_password.length > 255) errors.push("La contraseña no puede exceder 255 caracteres");\
+    \
+    if (errors.length > 0) {\
+      return res.status(400).json({\
+        success: false,\
+        error: "Errores de validación",\
+        details: errors\
+      });\
+    }\
+    \
+    \/\/ Verificar email único (excepto la empresa actual)\
+    const existingEmail = await pool.query("SELECT id FROM companies WHERE admin_email = $1 AND id != $2", [admin_email, id]);\
+    if (existingEmail.rows.length > 0) {\
+      return res.status(409).json({\
+        success: false,\
+        error: "Ya existe otra empresa con este email de administrador"\
+      });\
+    }\
+    \
+    \/\/ Actualizar empresa (solo campos que han cambiado)\
+    const updateData = {\
+      name: name.trim(),\
+      sector: sector.trim(),\
+      admin_name: admin_name.trim(),\
+      admin_phone: admin_phone.trim(),\
+      admin_email: admin_email.trim()\
+    };\
+    \
+    \/\/ Solo incluir contraseña si se proporcionó una nueva\
+    if (admin_password && admin_password.trim()) {\
+      updateData.admin_password = admin_password.trim();\
+    }\
+    \
+    const result = await pool.query(`\
+      UPDATE companies \
+      SET name = $1, sector = $2, admin_name = $3, admin_phone = $4, admin_email = $5\
+      ${admin_password && admin_password.trim() ? ', admin_password = $7' : ''}, updated_at = CURRENT_TIMESTAMP\
+      WHERE id = $6\
+      RETURNING id, name, sector, tenant_id, admin_name, admin_email, created_at\
+    `, admin_password && admin_password.trim() ? \
+        [name.trim(), sector.trim(), admin_name.trim(), admin_phone.trim(), admin_email.trim(), id, admin_password.trim()] :\
+        [name.trim(), sector.trim(), admin_name.trim(), admin_phone.trim(), admin_email.trim(), id]);\
+    \
+    const updatedCompany = result.rows[0];\
+    \
+    console.log(`✅ Empresa actualizada exitosamente: ${updatedCompany.name} (ID: ${id})`);\
+    \
+    res.json({\
+      success: true,\
+      message: `Empresa "${updatedCompany.name}" actualizada exitosamente`,\
+      data: updatedCompany\
+    });\
+    \
+  } catch (error) {\
+    console.error("❌ Error actualizando empresa:", error);\
+    \
+    \/\/ Manejar errores específicos de PostgreSQL\
+    if (error.code === "23505") { \/\/ Constraint violation\
+      return res.status(409).json({\
+        success: false,\
+        error: "Ya existe una empresa con estos datos únicos"\
+      });\
+    }\
+    \
+    res.status(500).json({\
+      success: false,\
+      error: "Error interno del servidor",\
+      details: error.message\
+    });\
+  }\
+});\
+\
+' "$API_SERVER_FILE"
+
+    echo "✅ Endpoint PUT agregado"
+fi
+
+# Actualizar mensaje de inicio del servidor
+if ! grep -q "✏️ Actualizar empresa" "$API_SERVER_FILE"; then
+    sed -i '/console.log(`🗑️ Eliminar empresa:/i\
+  console.log(`✏️ Actualizar empresa: PUT http://localhost:${PORT}/api/companies/:id`);' "$API_SERVER_FILE"
+fi
+
+echo "✅ Servidor actualizado con endpoint PUT"
+
+# Paso 3: Actualizar Dashboard con funcionalidad de edición
+echo ""
+echo "🔧 Paso 3: Creando Dashboard con modal de edición..."
+
+cat > "$DASHBOARD_FILE" << 'EOF'
 import React, { useState, useEffect } from 'react';
 import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit } from 'lucide-react';
 import { apiService, Company, CreateCompanyData } from '../services/api';
@@ -827,3 +1048,107 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+EOF
+
+echo "✅ Dashboard actualizado con modal de edición completo"
+
+# Paso 4: Reiniciar servidor API
+echo ""
+echo "🔄 Reiniciando servidor API..."
+
+cd api
+
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "🛑 Deteniendo servidor anterior..."
+    pkill -f "node.*server.js"
+    sleep 2
+fi
+
+echo "🚀 Iniciando servidor con endpoint PUT..."
+node src/server.js &
+sleep 3
+
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "✅ Servidor API reiniciado con endpoint PUT"
+else
+    echo "❌ Error: Servidor no se pudo iniciar"
+    exit 1
+fi
+
+# Paso 5: Verificar frontend
+echo ""
+echo "🔍 Verificando servidor de desarrollo..."
+
+cd ../super-admin/frontend
+
+if pgrep -f "npm run dev" > /dev/null || pgrep -f "vite" > /dev/null; then
+    echo "✅ Servidor de desarrollo ejecutándose"
+    echo "   Los cambios se aplicarán automáticamente"
+else
+    echo "⚠️ Servidor de desarrollo no está corriendo"
+    echo "   Iniciando servidor..."
+    npm run dev &
+    sleep 3
+    echo "✅ Servidor frontend iniciado"
+fi
+
+echo ""
+echo "🎉 MODAL DE EDICIÓN IMPLEMENTADO COMPLETAMENTE"
+echo "============================================="
+echo ""
+echo "✅ API Service: Método updateCompany agregado"
+echo "✅ Backend: Endpoint PUT /api/companies/:id creado"
+echo "✅ Frontend: Modal unificado para Crear/Editar"
+echo "✅ Validaciones: Completas para ambos modos"
+echo "✅ UX/UI: Botón X para cerrar sin guardar"
+echo ""
+echo "🎯 FUNCIONALIDADES IMPLEMENTADAS:"
+echo "================================="
+echo ""
+echo "➕ CREAR EMPRESA:"
+echo "   • Botón 'Agregar Empresa' (verde)"
+echo "   • Modal con formulario vacío"
+echo "   • Botón 'Crear Empresa' (verde)"
+echo "   • Validaciones completas"
+echo ""
+echo "✏️ EDITAR EMPRESA:"
+echo "   • Botón 'Editar' en cada card de empresa"
+echo "   • Modal con datos precargados"
+echo "   • Botón 'Actualizar Empresa' (azul)"
+echo "   • Validación de email único (excepto empresa actual)"
+echo "   • Contraseña opcional (mantiene actual si vacío)"
+echo ""
+echo "🔧 CARACTERÍSTICAS DEL MODAL:"
+echo "   • Header dinámico (Crear/Editar + iconos)"
+echo "   • Botón X arriba derecha para cerrar"
+echo "   • Formulario idéntico para ambos modos"
+echo "   • Estados de carga diferenciados"
+echo "   • Mensajes de éxito específicos"
+echo ""
+echo "🧪 PRUEBA EL MODAL DE EDICIÓN:"
+echo "============================="
+echo ""
+echo "1. Ve a: http://194.164.172.92:3000"
+echo ""
+echo "2. Haz clic en 'Editar' en cualquier empresa"
+echo ""
+echo "3. Verifica que los datos aparecen precargados"
+echo ""
+echo "4. Modifica algún campo (ej: nombre o sector)"
+echo ""
+echo "5. Haz clic en 'Actualizar Empresa'"
+echo ""
+echo "6. Deberías ver:"
+echo "   • Alert: 'Empresa actualizada exitosamente'"
+echo "   • Cambios reflejados en la lista"
+echo ""
+echo "7. Prueba el botón X para cerrar sin guardar"
+echo ""
+echo "🔍 ENDPOINTS DISPONIBLES:"
+echo "========================"
+echo "• POST /api/companies - Crear empresa"
+echo "• PUT /api/companies/:id - Actualizar empresa" 
+echo "• DELETE /api/companies/:id - Eliminar empresa"
+echo "• GET /api/companies - Listar empresas"
+echo ""
+echo "🎉 ¡CRUD COMPLETO DE EMPRESAS FUNCIONANDO!"

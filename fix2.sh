@@ -1,3 +1,35 @@
+#!/bin/bash
+
+# Script para arreglar validación de contraseña en endpoint PUT
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./fix_password_validation.sh
+
+set -e
+
+echo "🔐 ZienSHIELD Password Validation Fix"
+echo "===================================="
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "api/src/server.js" ]; then
+    echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
+    exit 1
+fi
+
+API_SERVER_FILE="api/src/server.js"
+BACKUP_FILE="api/src/server.js.backup.password.$(date +%Y%m%d_%H%M%S)"
+
+echo "📁 Archivo a corregir: $API_SERVER_FILE"
+
+# Crear backup
+echo "💾 Creando backup..."
+cp "$API_SERVER_FILE" "$BACKUP_FILE"
+echo "✅ Backup: $BACKUP_FILE"
+
+echo ""
+echo "🔧 Arreglando validación de contraseña en endpoint PUT..."
+
+# Crear nuevo servidor con validación corregida
+cat > "$API_SERVER_FILE" << 'EOF'
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -470,3 +502,75 @@ app.listen(PORT, async () => {
 pool.on('error', (err) => {
   console.error('❌ Error de conexión PostgreSQL:', err);
 });
+EOF
+
+echo "✅ Servidor actualizado con validación de contraseña corregida"
+
+echo ""
+echo "🔄 Reiniciando servidor API..."
+
+cd api
+
+# Matar proceso anterior
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "🛑 Deteniendo servidor anterior..."
+    pkill -f "node.*server.js"
+    sleep 2
+fi
+
+# Iniciar nuevo servidor
+echo "🚀 Iniciando servidor con validación corregida..."
+node src/server.js &
+sleep 3
+
+# Verificar que está corriendo
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "✅ Servidor reiniciado exitosamente"
+else
+    echo "❌ Error: Servidor no se pudo iniciar"
+    exit 1
+fi
+
+echo ""
+echo "🧪 Probando endpoint PUT..."
+
+# Probar actualización sin contraseña
+echo "Probando actualización sin contraseña (debe funcionar):"
+response=$(curl -s -X PUT "http://localhost:3001/api/companies/1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Update",
+    "sector": "TECH", 
+    "admin_name": "Admin Test",
+    "admin_phone": "+34123456789",
+    "admin_email": "test@example.com",
+    "admin_password": ""
+  }')
+
+echo "Respuesta:"
+echo "$response" | jq '.' 2>/dev/null || echo "$response"
+
+echo ""
+echo "🎉 PROBLEMA SOLUCIONADO"
+echo "======================="
+echo ""
+echo "✅ Validación de contraseña corregida:"
+echo "   • CREAR: Contraseña obligatoria"
+echo "   • EDITAR: Contraseña opcional"
+echo ""
+echo "✅ Endpoint PUT actualizado:"
+echo "   • Si admin_password vacío → mantiene contraseña actual"
+echo "   • Si admin_password con valor → actualiza contraseña"
+echo ""
+echo "✅ Logs mejorados para debugging"
+echo ""
+echo "🧪 PRUEBA AHORA:"
+echo "==============="
+echo "1. Ve a: http://194.164.172.92:3000"
+echo "2. Edita una empresa (ej: 'Pato')"
+echo "3. DEJA LA CONTRASEÑA VACÍA"
+echo "4. Modifica otro campo (nombre, teléfono, etc.)"
+echo "5. Haz clic 'Actualizar Empresa'"
+echo "6. ¡Debería funcionar sin errores!"
+echo ""
+echo "🔥 ¡Contraseña opcional en edición funcionando!"

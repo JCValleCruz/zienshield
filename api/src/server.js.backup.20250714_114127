@@ -94,8 +94,7 @@ app.get('/api/companies', async (req, res) => {
         name, 
         sector, 
         tenant_id, 
-        admin_name,
-        admin_phone, 
+        admin_name, 
         admin_email, 
         created_at 
       FROM companies 
@@ -126,12 +125,7 @@ app.get('/api/companies/:id', async (req, res) => {
     const { id } = req.params;
     console.log(`🔍 Buscando empresa con ID: ${id}`);
     
-    const result = await pool.query(`
-      SELECT 
-        id, name, sector, tenant_id, admin_name, admin_phone, admin_email, created_at
-      FROM companies 
-      WHERE id = $1
-    `, [id]);
+    const result = await pool.query('SELECT * FROM companies WHERE id = $1', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ 
@@ -163,7 +157,7 @@ app.post('/api/companies', async (req, res) => {
     
     console.log('➕ Creando nueva empresa:', name);
     
-    // 🔍 VALIDACIONES PARA CREAR (todas obligatorias)
+    // 🔍 VALIDACIONES
     const errors = [];
     
     // Campos obligatorios
@@ -256,107 +250,85 @@ app.post('/api/companies', async (req, res) => {
   }
 });
 
-// ✏️ ACTUALIZAR EMPRESA (CONTRASEÑA OPCIONAL)
-app.put('/api/companies/:id', async (req, res) => {
+// ✏️ ACTUALIZAR EMPRESA
+app.put("/api/companies/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, sector, admin_name, admin_phone, admin_email, admin_password } = req.body;
     
-    console.log('✏️ Actualizando empresa con ID:', id);
+    console.log("✏️ Actualizando empresa con ID:", id);
     
     // Verificar que el ID es válido
     if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({
         success: false,
-        error: 'ID de empresa inválido'
+        error: "ID de empresa inválido"
       });
     }
     
     // Verificar que la empresa existe
-    const checkResult = await pool.query('SELECT id, name FROM companies WHERE id = $1', [id]);
+    const checkResult = await pool.query("SELECT id, name FROM companies WHERE id = $1", [id]);
     
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Empresa no encontrada'
+        error: "Empresa no encontrada"
       });
     }
     
-    // 🔍 VALIDACIONES PARA EDITAR (contraseña opcional)
+    // 🔍 VALIDACIONES (iguales que POST)
     const errors = [];
     
-    // Campos obligatorios (excepto contraseña)
-    if (!name?.trim()) errors.push('El nombre de la empresa es obligatorio');
-    if (!sector?.trim()) errors.push('El sector es obligatorio');
-    if (!admin_name?.trim()) errors.push('El nombre del administrador es obligatorio');
-    if (!admin_phone?.trim()) errors.push('El teléfono del administrador es obligatorio');
-    if (!admin_email?.trim()) errors.push('El email del administrador es obligatorio');
-    
-    // Contraseña: validar solo si se proporciona
-    if (admin_password && admin_password.trim() && admin_password.trim().length < 6) {
-      errors.push('La contraseña debe tener al menos 6 caracteres');
-    }
+    // Campos obligatorios
+    if (!name?.trim()) errors.push("El nombre de la empresa es obligatorio");
+    if (!sector?.trim()) errors.push("El sector es obligatorio");
+    if (!admin_name?.trim()) errors.push("El nombre del administrador es obligatorio");
+    if (!admin_phone?.trim()) errors.push("El teléfono del administrador es obligatorio");
+    if (!admin_email?.trim()) errors.push("El email del administrador es obligatorio");
+    if (!admin_password?.trim()) errors.push("La contraseña del administrador es obligatoria");
     
     // Validaciones de formato
     if (admin_email && !isValidEmail(admin_email)) {
-      errors.push('El formato del email no es válido');
+      errors.push("El formato del email no es válido");
     }
     
     if (admin_phone && !isValidPhone(admin_phone)) {
-      errors.push('El formato del teléfono no es válido');
+      errors.push("El formato del teléfono no es válido");
     }
     
     // Validaciones de longitud
-    if (name && name.length > 255) errors.push('El nombre de la empresa no puede exceder 255 caracteres');
-    if (sector && sector.length > 100) errors.push('El sector no puede exceder 100 caracteres');
-    if (admin_name && admin_name.length > 255) errors.push('El nombre del administrador no puede exceder 255 caracteres');
-    if (admin_phone && admin_phone.length > 20) errors.push('El teléfono no puede exceder 20 caracteres');
-    if (admin_email && admin_email.length > 255) errors.push('El email no puede exceder 255 caracteres');
-    if (admin_password && admin_password.length > 255) errors.push('La contraseña no puede exceder 255 caracteres');
+    if (name && name.length > 255) errors.push("El nombre de la empresa no puede exceder 255 caracteres");
+    if (sector && sector.length > 100) errors.push("El sector no puede exceder 100 caracteres");
+    if (admin_name && admin_name.length > 255) errors.push("El nombre del administrador no puede exceder 255 caracteres");
+    if (admin_phone && admin_phone.length > 20) errors.push("El teléfono no puede exceder 20 caracteres");
+    if (admin_email && admin_email.length > 255) errors.push("El email no puede exceder 255 caracteres");
+    if (admin_password && admin_password.length > 255) errors.push("La contraseña no puede exceder 255 caracteres");
     
     if (errors.length > 0) {
       return res.status(400).json({
         success: false,
-        error: 'Errores de validación',
+        error: "Errores de validación",
         details: errors
       });
     }
     
     // Verificar email único (excepto la empresa actual)
-    const existingEmail = await pool.query('SELECT id FROM companies WHERE admin_email = $1 AND id != $2', [admin_email, id]);
+    const existingEmail = await pool.query("SELECT id FROM companies WHERE admin_email = $1 AND id != $2", [admin_email, id]);
     if (existingEmail.rows.length > 0) {
       return res.status(409).json({
         success: false,
-        error: 'Ya existe otra empresa con este email de administrador'
+        error: "Ya existe otra empresa con este email de administrador"
       });
     }
     
-    // 🔐 ACTUALIZAR - Solo incluir contraseña si se proporciona
-    let query, params;
+    // Actualizar empresa
+    const result = await pool.query(`
+      UPDATE companies 
+      SET name = $1, sector = $2, admin_name = $3, admin_phone = $4, admin_email = $5, admin_password = $6, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $7
+      RETURNING id, name, sector, tenant_id, admin_name, admin_email, created_at
+    `, [name.trim(), sector.trim(), admin_name.trim(), admin_phone.trim(), admin_email.trim(), admin_password, id]);
     
-    if (admin_password && admin_password.trim()) {
-      // Actualizar CON nueva contraseña
-      query = `
-        UPDATE companies 
-        SET name = $1, sector = $2, admin_name = $3, admin_phone = $4, admin_email = $5, admin_password = $6, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $7
-        RETURNING id, name, sector, tenant_id, admin_name, admin_email, created_at
-      `;
-      params = [name.trim(), sector.trim(), admin_name.trim(), admin_phone.trim(), admin_email.trim(), admin_password.trim(), id];
-      console.log('🔐 Actualizando con nueva contraseña');
-    } else {
-      // Actualizar SIN cambiar contraseña
-      query = `
-        UPDATE companies 
-        SET name = $1, sector = $2, admin_name = $3, admin_phone = $4, admin_email = $5, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $6
-        RETURNING id, name, sector, tenant_id, admin_name, admin_email, created_at
-      `;
-      params = [name.trim(), sector.trim(), admin_name.trim(), admin_phone.trim(), admin_email.trim(), id];
-      console.log('🔐 Actualizando manteniendo contraseña actual');
-    }
-    
-    const result = await pool.query(query, params);
     const updatedCompany = result.rows[0];
     
     console.log(`✅ Empresa actualizada exitosamente: ${updatedCompany.name} (ID: ${id})`);
@@ -368,23 +340,24 @@ app.put('/api/companies/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Error actualizando empresa:', error);
+    console.error("❌ Error actualizando empresa:", error);
     
     // Manejar errores específicos de PostgreSQL
-    if (error.code === '23505') { // Constraint violation
+    if (error.code === "23505") { // Constraint violation
       return res.status(409).json({
         success: false,
-        error: 'Ya existe una empresa con estos datos únicos'
+        error: "Ya existe una empresa con estos datos únicos"
       });
     }
     
     res.status(500).json({
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
       details: error.message
     });
   }
 });
+
 
 // 🗑️ ELIMINAR EMPRESA
 app.delete('/api/companies/:id', async (req, res) => {

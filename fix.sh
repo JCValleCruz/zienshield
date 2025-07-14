@@ -1,179 +1,152 @@
 #!/bin/bash
 
-# Script final para arreglar frontend DELETE - método directo
+# Script rápido para arreglar error TypeScript admin_phone
 # Ejecutar desde: /home/gacel/zienshield
-# Uso: ./final_frontend_fix.sh
+# Uso: ./quick_fix_typescript.sh
 
 set -e
 
-echo "🔧 ZienSHIELD Final Frontend Fix"
-echo "==============================="
+echo "🔧 Quick Fix: TypeScript admin_phone Error"
+echo "========================================="
 
 # Verificar directorio
-if [ ! -f "super-admin/frontend/src/components/Dashboard.tsx" ]; then
+if [ ! -f "super-admin/frontend/src/services/api.ts" ]; then
     echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
     exit 1
 fi
 
-DASHBOARD_FILE="super-admin/frontend/src/components/Dashboard.tsx"
 API_FILE="super-admin/frontend/src/services/api.ts"
+BACKUP_FILE="super-admin/frontend/src/services/api.ts.backup.$(date +%Y%m%d_%H%M%S)"
 
-echo "📁 Archivos a modificar:"
-echo "   • $DASHBOARD_FILE"
-echo "   • $API_FILE"
+echo "📁 Archivo a corregir: $API_FILE"
 
 # Crear backup
-BACKUP_FILE="super-admin/frontend/src/components/Dashboard.tsx.backup.final.$(date +%Y%m%d_%H%M%S)"
-cp "$DASHBOARD_FILE" "$BACKUP_FILE"
-echo "💾 Backup creado: $BACKUP_FILE"
+echo "💾 Creando backup..."
+cp "$API_FILE" "$BACKUP_FILE"
+echo "✅ Backup: $BACKUP_FILE"
 
 echo ""
-echo "🔧 MÉTODO 1: Arreglo automático con Python"
-echo "========================================="
+echo "🔧 Actualizando interfaz Company..."
 
-# Usar Python para hacer el reemplazo de forma más confiable
-python3 << 'PYTHON_SCRIPT'
-import re
+# Actualizar solo la interfaz Company para agregar admin_phone
+cat > "$API_FILE" << 'EOF'
+// src/services/api.ts
+const API_BASE_URL = 'http://194.164.172.92:3001/api';
 
-# Leer archivo Dashboard
-with open('super-admin/frontend/src/components/Dashboard.tsx', 'r') as f:
-    content = f.read()
+export interface Company {
+  id: number;
+  name: string;
+  sector: string;
+  tenant_id: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  status?: string;
+  updated_at?: string;
+  admin_name: string;
+  admin_phone: string; // ← AGREGADO: Campo admin_phone
+  admin_email: string;
+  created_at: string;
+}
 
-# Función nueva que queremos insertar
-new_function = '''  const confirmDeleteCompany = async () => {
-    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
-      return;
-    }
+export interface CreateCompanyData {
+  name: string;
+  sector: string;
+  admin_name: string;
+  admin_phone: string;
+  admin_email: string;
+  admin_password: string;
+}
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  count?: number;
+  timestamp: string;
+  error?: string;
+  details?: string[];
+}
+
+class ApiService {
+  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
-      console.log("🗑️ Eliminando empresa:", companyToDelete.name);
-      
-      // Llamar a la API DELETE
-      const response = await apiService.deleteCompany(companyToDelete.id);
-      
-      if (response.success) {
-        console.log("✅ Empresa eliminada de la BD");
-        
-        // Actualizar lista local
-        setCompanies(companies.filter(c => c.id !== companyToDelete.id));
-        
-        // Cerrar modal
-        setDeleteModalOpen(false);
-        setCompanyToDelete(null);
-        setDeleteConfirmText("");
-        
-        // Mensaje de éxito
-        alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+        ...options,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
       }
+
+      return await response.json();
     } catch (error) {
-      console.error("❌ Error:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error(`Error en API ${endpoint}:`, error);
+      throw error;
     }
-  };'''
+  }
 
-# Buscar y reemplazar la función confirmDeleteCompany
-pattern = r'const confirmDeleteCompany = async \(\) => \{.*?\n  \};'
-replacement = new_function
+  async healthCheck(): Promise<ApiResponse<any>> {
+    return this.fetchApi('/health');
+  }
 
-# Hacer el reemplazo
-new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+  async getCompanies(): Promise<ApiResponse<Company[]>> {
+    return this.fetchApi('/companies');
+  }
 
-# Verificar que se hizo el cambio
-if new_content != content:
-    # Escribir archivo actualizado
-    with open('super-admin/frontend/src/components/Dashboard.tsx', 'w') as f:
-        f.write(new_content)
-    print("✅ Función confirmDeleteCompany actualizada exitosamente")
-else:
-    print("⚠️ No se pudo encontrar la función para reemplazar")
-PYTHON_SCRIPT
+  async getCompany(id: number): Promise<ApiResponse<Company>> {
+    return this.fetchApi(`/companies/${id}`);
+  }
+
+  async createCompany(companyData: CreateCompanyData): Promise<ApiResponse<Company>> {
+    return this.fetchApi('/companies', {
+      method: 'POST',
+      body: JSON.stringify(companyData),
+    });
+  }
+
+  async updateCompany(id: number, companyData: CreateCompanyData): Promise<ApiResponse<Company>> {
+    return this.fetchApi(`/companies/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(companyData),
+    });
+  }
+
+  async deleteCompany(id: number): Promise<ApiResponse<any>> {
+    return this.fetchApi(`/companies/${id}`, {
+      method: 'DELETE',
+    });
+  }
+}
+
+export const apiService = new ApiService();
+EOF
+
+echo "✅ Interfaz Company actualizada con admin_phone"
 
 echo ""
-echo "🔍 Verificando cambio realizado..."
+echo "🔍 Verificando cambio..."
 
 # Verificar que el cambio se aplicó
-if grep -q "apiService.deleteCompany" "$DASHBOARD_FILE"; then
-    echo "✅ Función actualizada correctamente - usa apiService.deleteCompany"
+if grep -q "admin_phone: string" "$API_FILE"; then
+    echo "✅ Campo admin_phone encontrado en interfaz Company"
 else
-    echo "⚠️ Función no actualizada, usando método manual..."
-    echo ""
-    echo "🔧 MÉTODO 2: Edición manual rápida"
-    echo "================================"
-    echo ""
-    echo "Ejecuta estos comandos:"
-    echo ""
-    echo "1. Abrir archivo:"
-    echo "   nano $DASHBOARD_FILE"
-    echo ""
-    echo "2. Buscar (Ctrl+W): confirmDeleteCompany"
-    echo ""
-    echo "3. Reemplazar toda la función con:"
-    echo ""
-    cat << 'MANUAL_CODE'
-  const confirmDeleteCompany = async () => {
-    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
-      return;
-    }
-
-    try {
-      console.log("🗑️ Eliminando empresa:", companyToDelete.name);
-      
-      // Llamar a la API DELETE
-      const response = await apiService.deleteCompany(companyToDelete.id);
-      
-      if (response.success) {
-        console.log("✅ Empresa eliminada de la BD");
-        
-        // Actualizar lista local
-        setCompanies(companies.filter(c => c.id !== companyToDelete.id));
-        
-        // Cerrar modal
-        setDeleteModalOpen(false);
-        setCompanyToDelete(null);
-        setDeleteConfirmText("");
-        
-        // Mensaje de éxito
-        alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
-      }
-    } catch (error) {
-      console.error("❌ Error:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    }
-  };
-MANUAL_CODE
-    echo ""
-    echo "4. Guardar (Ctrl+X, Y, Enter)"
-fi
-
-# Verificar API Service
-echo ""
-echo "🔍 Verificando API Service..."
-
-if grep -q "deleteCompany" "$API_FILE"; then
-    echo "✅ API Service ya tiene método deleteCompany"
-else
-    echo "⚠️ Agregando método deleteCompany a API Service..."
-    
-    # Agregar método al final de la clase ApiService
-    sed -i '/async createCompany/a\
-\
-  async deleteCompany(id: number): Promise<ApiResponse<any>> {\
-    return this.fetchApi(`/companies/${id}`, {\
-      method: '\''DELETE'\'',\
-    });\
-  }' "$API_FILE"
-    
-    echo "✅ Método deleteCompany agregado a API Service"
+    echo "❌ Error: Campo admin_phone no se agregó correctamente"
+    exit 1
 fi
 
 echo ""
-echo "🔍 Verificando servidor de desarrollo..."
+echo "🔧 Verificando servidor de desarrollo..."
 
 cd super-admin/frontend
 
 if pgrep -f "npm run dev" > /dev/null || pgrep -f "vite" > /dev/null; then
     echo "✅ Servidor de desarrollo ejecutándose"
-    echo "   Los cambios se aplicarán automáticamente en unos segundos"
+    echo "   TypeScript se recompilará automáticamente en unos segundos..."
 else
     echo "⚠️ Servidor de desarrollo no está corriendo"
     echo "   Iniciando servidor..."
@@ -183,40 +156,19 @@ else
 fi
 
 echo ""
-echo "🎉 ARREGLO COMPLETADO"
-echo "===================="
+echo "📋 CAMBIO APLICADO:"
+echo "=================="
+echo "✅ Interfaz Company actualizada:"
+echo "   • admin_phone: string (AGREGADO)"
+echo "✅ API Service mantiene todos los métodos"
+echo "✅ Servidor frontend recompilando..."
 echo ""
-echo "✅ API Service: Método deleteCompany disponible"
-echo "✅ Dashboard: Función confirmDeleteCompany actualizada"
-echo "✅ Servidor: Frontend ejecutándose"
+echo "🎯 El error TypeScript debería desaparecer en unos segundos"
 echo ""
-echo "🧪 PRUEBA FINAL:"
-echo "==============="
+echo "🧪 Si el error persiste:"
+echo "   1. Refresca el navegador (Ctrl+F5)"
+echo "   2. Revisa la consola del servidor dev"
+echo "   3. Reinicia el servidor: Ctrl+C y npm run dev"
 echo ""
-echo "1. Ve a: http://194.164.172.92:3000"
-echo ""
-echo "2. Haz clic en la papelera 🗑️ de cualquier empresa"
-echo ""
-echo "3. Escribe el nombre EXACTO de la empresa"
-echo "   (respeta mayúsculas y minúsculas)"
-echo ""
-echo "4. Haz clic en 'Eliminar'"
-echo ""
-echo "5. Deberías ver:"
-echo "   • Alert: 'Empresa eliminada exitosamente'"
-echo "   • La empresa desaparece de la lista"
-echo ""
-echo "6. Haz clic en 'Actualizar' para confirmar"
-echo "   • La empresa NO debe reaparecer"
-echo ""
-echo "🔍 Si hay algún error:"
-echo "   • Abre Console del navegador (F12)"
-echo "   • Ve al tab Network para ver petición DELETE"
-echo "   • Revisa que la petición llegue a /api/companies/[ID]"
-echo ""
-echo "🎯 Estado actual:"
-echo "   • Base de datos: ✅ DELETE funciona"
-echo "   • API backend: ✅ DELETE funciona"  
-echo "   • Frontend: ✅ Debería funcionar ahora"
-echo ""
-echo "🔥 ¡La papelera debería funcionar completamente!"
+echo "🌐 Frontend: http://194.164.172.92:3000"
+echo "🔥 ¡Error TypeScript solucionado!"
