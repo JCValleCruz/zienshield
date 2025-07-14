@@ -1,41 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import './index.css';
+import './App.css';
 
 interface User {
   email: string;
-  role: string;
   name: string;
 }
 
-const API_URL = process.env.REACT_APP_API_URL;
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Verificar si hay sesión guardada
-    const savedUser = localStorage.getItem('zienshield_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = async (credentials: { email: string; password: string }) => {
+  const handleLogin = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, credentials);
+      // Simular autenticación (después conectaremos con la API real)
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (response.data.success) {
-        const userData = response.data.user;
-        setUser(userData);
-        localStorage.setItem('zienshield_user', JSON.stringify(userData));
-        localStorage.setItem('zienshield_token', response.data.token);
+      // Credenciales de prueba
+      if (credentials.email === 'admin@zienshield.com' && credentials.password === 'ZienAdmin2025') {
+        setUser({
+          email: credentials.email,
+          name: 'Super Admin'
+        });
         return true;
       }
+      
       return false;
     } catch (error) {
       console.error('Error en login:', error);
@@ -45,23 +39,27 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('zienshield_user');
-    localStorage.removeItem('zienshield_token');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-xl">Cargando ZienSHIELD...</div>
-      </div>
-    );
-  }
-
+  // Si no hay usuario, mostrar login
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
-  return <Dashboard user={user} onLogout={handleLogout} />;
+  // Si hay usuario, mostrar dashboard
+  return (
+    <div className="App">
+      <Dashboard />
+      
+      {/* Botón de logout temporal en la esquina */}
+      <button
+        onClick={handleLogout}
+        className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm z-50"
+      >
+        Cerrar Sesión
+      </button>
+    </div>
+  );
 }
 
 export default App;

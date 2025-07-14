@@ -1,386 +1,220 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { motion } from 'framer-motion';
-import { 
-  Shield, Building, Users, AlertTriangle, Activity, Plus, LogOut, 
-  Trash2, Mail, Phone, Calendar, CheckCircle, XCircle, Clock,
-  TrendingUp, Server, Globe, Eye
-} from 'lucide-react';
-import CompanyModal from './CompanyModal';
-import DeleteModal from './DeleteModal';
+import { Shield, Monitor, AlertTriangle, Building2, Users, Loader } from 'lucide-react';
+import { apiService, Company } from '../services/api';
 
-interface User {
-  email: string;
-  role: string;
-  name: string;
-}
-
-interface Company {
-  id: number;
-  company_name: string;
-  admin_email: string;
-  sector: string;
-  total_agents: number;
-  active_agents: number;
-  compliance_percentage: number;
-  status: string;
-  created_at: string;
-}
-
-interface Stats {
-  companies: { total: number; active: number };
-  agents: { total: number; active: number };
-  alerts: { total: number; critical: number };
-  compliance: { average: number };
-  threats: { blocked: number };
-  wazuh: { status: string; version: string };
-}
-
-const API_URL = process.env.REACT_APP_API_URL;
-
-interface DashboardProps {
-  user: User;
-  onLogout: () => void;
-}
-
-export default function Dashboard({ user, onLogout }: DashboardProps) {
+const Dashboard: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<string>('Verificando...');
 
   useEffect(() => {
-    loadData();
-    // Actualizar datos cada 30 segundos
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+    loadDashboardData();
   }, []);
 
-  const loadData = async () => {
+  const loadDashboardData = async () => {
     try {
-      const [companiesRes, statsRes] = await Promise.all([
-        axios.get(`${API_URL}/companies`),
-        axios.get(`${API_URL}/stats`)
-      ]);
-
-      if (companiesRes.data.success) {
-        setCompanies(companiesRes.data.data);
+      setIsLoading(true);
+      setError(null);
+      
+      // Verificar salud de la API
+      console.log('🔍 Verificando conexión API...');
+      const healthResponse = await apiService.healthCheck();
+      setApiStatus(`API OK - ${healthResponse.data?.companies || 0} empresas en BD`);
+      
+      // Cargar empresas
+      console.log('📋 Cargando empresas...');
+      const companiesResponse = await apiService.getCompanies();
+      
+      if (companiesResponse.success) {
+        setCompanies(companiesResponse.data);
+        console.log(`✅ ${companiesResponse.data.length} empresas cargadas:`, companiesResponse.data);
+      } else {
+        throw new Error(companiesResponse.error || 'Error desconocido');
       }
-      if (statsRes.data.success) {
-        setStats(statsRes.data.data);
-      }
+      
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ Error cargando dashboard:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+      setApiStatus('API Error');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleCreateCompany = async (companyData: any) => {
-    try {
-      const response = await axios.post(`${API_URL}/companies`, companyData);
-      if (response.data.success) {
-        await loadData();
-        setShowCreateModal(false);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error creando empresa:', error);
-      return false;
+  const getSectorColor = (sector: string) => {
+    switch (sector) {
+      case 'TELECOM': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'LEGAL': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'RETAIL': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     }
   };
 
-  const handleDeleteCompany = async () => {
-    if (!selectedCompany) return false;
-    
-    try {
-      const response = await axios.delete(`${API_URL}/companies/${selectedCompany.id}`);
-      if (response.data.success) {
-        await loadData();
-        setShowDeleteModal(false);
-        setSelectedCompany(null);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error eliminando empresa:', error);
-      return false;
-    }
-  };
-
-  const StatCard = ({ title, value, icon: Icon, color, subtitle }: any) => (
-    <motion.div 
-      whileHover={{ y: -5 }}
-      className="stat-card card-hover rounded-xl"
-    >
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          <TrendingUp className="w-5 h-5 text-slate-400" />
-        </div>
-        <div>
-          <p className="text-3xl font-bold text-white mb-1">{value}</p>
-          <p className="text-slate-400 text-sm font-medium">{title}</p>
-          {subtitle && <p className="text-slate-500 text-xs mt-1">{subtitle}</p>}
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  const CompanyCard = ({ company }: { company: Company }) => (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      whileHover={{ y: -5 }}
-      className="card-professional card-hover rounded-xl p-6 relative overflow-hidden"
-    >
-      {/* Status Indicator */}
-      <div className="absolute top-4 right-4">
-        {company.status === 'active' ? (
-          <CheckCircle className="w-5 h-5 text-green-400" />
-        ) : (
-          <XCircle className="w-5 h-5 text-red-400" />
-        )}
-      </div>
-
-      {/* Company Header */}
-      <div className="mb-6">
-        <h3 className="text-xl font-bold text-white mb-2">{company.company_name}</h3>
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-          {company.sector}
-        </span>
-      </div>
-
-      {/* Company Details */}
-      <div className="space-y-4 mb-6">
-        <div className="flex items-center text-slate-300">
-          <Mail className="w-4 h-4 mr-3 text-slate-400" />
-          <span className="text-sm">{company.admin_email}</span>
-        </div>
-        
-        <div className="flex items-center text-slate-300">
-          <Users className="w-4 h-4 mr-3 text-slate-400" />
-          <span className="text-sm">{company.active_agents}/{company.total_agents} agentes activos</span>
-        </div>
-
-        <div className="flex items-center text-slate-300">
-          <Calendar className="w-4 h-4 mr-3 text-slate-400" />
-          <span className="text-sm">Desde {new Date(company.created_at).toLocaleDateString()}</span>
-        </div>
-      </div>
-
-      {/* Compliance Bar */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-slate-400">Compliance</span>
-          <span className={`text-sm font-bold ${
-            company.compliance_percentage >= 80 ? 'text-green-400' : 
-            company.compliance_percentage >= 60 ? 'text-yellow-400' : 'text-red-400'
-          }`}>
-            {company.compliance_percentage}%
-          </span>
-        </div>
-        <div className="w-full bg-slate-700 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-500 ${
-              company.compliance_percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-400' :
-              company.compliance_percentage >= 60 ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
-              'bg-gradient-to-r from-red-500 to-red-400'
-            }`}
-            style={{ width: `${company.compliance_percentage}%` }}
-          ></div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex space-x-3">
-        <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-          <Eye className="w-4 h-4 mr-2" />
-          Ver Detalles
-        </button>
-        <button 
-          onClick={() => {
-            setSelectedCompany(company);
-            setShowDeleteModal(true);
-          }}
-          className="btn-danger flex items-center justify-center px-4"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    </motion.div>
-  );
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Cargando panel de administración...</p>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4 text-slate-300">
+          <Loader className="animate-spin h-8 w-8 text-blue-500" />
+          <span className="text-lg">Cargando ZienSHIELD...</span>
+          <span className="text-sm text-slate-500">{apiStatus}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                  ZienSHIELD Super Admin
-                </h1>
-                <p className="text-slate-400 text-sm">Panel de gestión global</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-white font-medium">{user.name}</p>
-                <p className="text-slate-400 text-sm">{user.email}</p>
-              </div>
-              <button 
-                onClick={onLogout}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Global Stats */}
-        {stats && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8"
-          >
-            <StatCard
-              title="Empresas Activas"
-              value={stats.companies.active}
-              icon={Building}
-              color="from-green-500 to-green-600"
-              subtitle={`${stats.companies.total} total`}
-            />
-            <StatCard
-              title="Agentes Globales"
-              value={stats.agents.total}
-              icon={Users}
-              color="from-blue-500 to-blue-600"
-              subtitle={`${stats.agents.active} activos`}
-            />
-            <StatCard
-              title="Alertas Críticas"
-              value={stats.alerts.critical}
-              icon={AlertTriangle}
-              color="from-red-500 to-red-600"
-              subtitle="Último mes"
-            />
-            <StatCard
-              title="Compliance Avg"
-              value={`${stats.compliance.average}%`}
-              icon={Activity}
-              color="from-purple-500 to-purple-600"
-              subtitle="Global"
-            />
-            <StatCard
-              title="Amenazas Bloqueadas"
-              value={stats.threats.blocked.toLocaleString()}
-              icon={Shield}
-              color="from-orange-500 to-orange-600"
-              subtitle="Total"
-            />
-            <StatCard
-              title="Estado Wazuh"
-              value={stats.wazuh.status === 'connected' ? 'Online' : 'Offline'}
-              icon={Server}
-              color={stats.wazuh.status === 'connected' ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'}
-              subtitle={`v${stats.wazuh.version}`}
-            />
-          </motion.div>
-        )}
-
-        {/* Companies Section */}
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Inventario de Empresas</h2>
-            <p className="text-slate-400">Gestione todas las organizaciones del sistema</p>
+            <h1 className="text-2xl font-bold text-white flex items-center">
+              <Shield className="h-8 w-8 mr-3 text-blue-500" />
+              ZienSHIELD Super Admin
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Panel de control multi-tenant • {apiStatus}
+            </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center space-x-2"
+          <button
+            onClick={loadDashboardData}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
-            <Plus className="w-5 h-5" />
-            <span>Nueva Empresa</span>
-          </motion.button>
+            <Monitor className="h-4 w-4" />
+            <span>Actualizar</span>
+          </button>
         </div>
-
-        {/* Companies Grid */}
-        <motion.div 
-          layout
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {companies.map((company) => (
-            <CompanyCard key={company.id} company={company} />
-          ))}
-        </motion.div>
-
-        {companies.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <Building className="w-24 h-24 text-slate-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-slate-400 mb-2">No hay empresas registradas</h3>
-            <p className="text-slate-500 mb-6">Comience agregando su primera empresa al sistema</p>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Agregar Primera Empresa
-            </button>
-          </motion.div>
-        )}
       </div>
 
-      {/* Modals */}
-      {showCreateModal && (
-        <CompanyModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateCompany}
-        />
-      )}
+      <div className="p-6">
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-400 mr-3" />
+              <div>
+                <h3 className="text-red-400 font-medium">Error de Conexión</h3>
+                <p className="text-red-300 text-sm mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {showDeleteModal && selectedCompany && (
-        <DeleteModal
-          company={selectedCompany}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedCompany(null);
-          }}
-          onConfirm={handleDeleteCompany}
-        />
-      )}
+        {/* Métricas Generales */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Building2 className="h-6 w-6 text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {companies.length}
+              </div>
+              <div className="text-sm text-slate-400">
+                Empresas registradas
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Shield className="h-6 w-6 text-green-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                100%
+              </div>
+              <div className="text-sm text-slate-400">
+                Sistema operativo
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <Users className="h-6 w-6 text-purple-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {companies.length * 2}
+              </div>
+              <div className="text-sm text-slate-400">
+                Usuarios activos
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de Empresas */}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg">
+          <div className="px-6 py-4 border-b border-slate-700">
+            <h2 className="text-xl font-semibold text-white flex items-center">
+              <Building2 className="h-5 w-5 mr-2 text-blue-400" />
+              Empresas Registradas ({companies.length})
+            </h2>
+          </div>
+          
+          <div className="p-6">
+            {companies.length === 0 ? (
+              <div className="text-center py-8">
+                <Building2 className="h-12 w-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400">No hay empresas registradas</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {companies.map((company) => (
+                  <div key={company.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{company.name}</h3>
+                        <p className="text-sm text-slate-400">{company.admin_name}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${getSectorColor(company.sector)}`}>
+                        {company.sector}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="text-slate-400">Email:</span>
+                        <span className="text-slate-300 ml-2">{company.admin_email}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-slate-400">Tenant ID:</span>
+                        <span className="text-slate-300 ml-2 font-mono text-xs">{company.tenant_id}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-slate-400">Creado:</span>
+                        <span className="text-slate-300 ml-2">
+                          {new Date(company.created_at).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex space-x-2">
+                      <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded text-sm transition-colors">
+                        Ver Dashboard
+                      </button>
+                      <button className="bg-slate-600 hover:bg-slate-500 text-white py-1.5 px-3 rounded text-sm transition-colors">
+                        Editar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default Dashboard;

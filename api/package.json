@@ -1,0 +1,24 @@
+{
+  "name": "zienshield-api",
+  "version": "1.0.0",
+  "description": "API Backend para ZienSHIELD Multi-Tenant",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.0",
+    "dotenv": "^16.0.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
