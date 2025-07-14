@@ -1,3 +1,47 @@
+#!/bin/bash
+
+# Script para agregar endpoint POST /api/companies
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./create_company_endpoint.sh
+
+set -e
+
+echo "🏗️ ZienSHIELD Company Endpoint Creator"
+echo "====================================="
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "api/src/server.js" ]; then
+    echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
+    echo "   No se encuentra api/src/server.js"
+    exit 1
+fi
+
+API_FILE="api/src/server.js"
+BACKUP_FILE="api/src/server.js.backup.$(date +%Y%m%d_%H%M%S)"
+
+echo "📁 Archivo API: $API_FILE"
+
+# Crear backup
+echo "💾 Creando backup..."
+cp "$API_FILE" "$BACKUP_FILE"
+echo "✅ Backup creado: $BACKUP_FILE"
+
+# Leer el archivo actual
+echo "🔍 Analizando servidor actual..."
+
+# Verificar si ya existe el endpoint POST
+if grep -q "app.post.*companies" "$API_FILE"; then
+    echo "⚠️  El endpoint POST ya existe, actualizando..."
+    UPDATING=true
+else
+    echo "➕ Agregando nuevo endpoint POST..."
+    UPDATING=false
+fi
+
+# Crear el archivo actualizado
+echo "🛠️  Actualizando server.js..."
+
+cat > "$API_FILE" << 'EOF'
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -268,3 +312,48 @@ app.listen(PORT, async () => {
 pool.on('error', (err) => {
   console.error('❌ Error de conexión PostgreSQL:', err);
 });
+EOF
+
+echo "✅ server.js actualizado exitosamente"
+
+# Verificar que el servidor API está corriendo
+echo ""
+echo "🔍 Verificando estado del servidor API..."
+
+cd api
+
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "🟢 El servidor API está ejecutándose"
+    echo "   Reiniciando para aplicar cambios..."
+    pkill -f "node.*server.js"
+    sleep 2
+    echo "🚀 Iniciando servidor actualizado..."
+    node src/server.js &
+    sleep 3
+    echo "✅ Servidor API reiniciado"
+else
+    echo "🟡 El servidor API no está ejecutándose"
+    echo "   ¿Quieres iniciarlo? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "🚀 Iniciando servidor API..."
+        node src/server.js &
+        sleep 3
+        echo "✅ Servidor API iniciado"
+    fi
+fi
+
+echo ""
+echo "📋 Resumen de cambios:"
+echo "   ✅ Backup creado: $BACKUP_FILE"
+echo "   ✅ Endpoint POST /api/companies agregado"
+echo "   ✅ Validaciones completas implementadas"
+echo "   ✅ Generación automática de tenant_id"
+echo "   ✅ Verificación de duplicados"
+echo ""
+echo "🧪 Para probar el endpoint:"
+echo "   curl -X POST http://194.164.172.92:3001/api/companies \\"
+echo "     -H 'Content-Type: application/json' \\"
+echo "     -d '{\"name\":\"Test Company\",\"sector\":\"TECH\",\"admin_name\":\"Admin Test\",\"admin_phone\":\"+34123456789\",\"admin_email\":\"test@test.com\",\"admin_password\":\"password123\"}'"
+echo ""
+echo "🎉 ¡Endpoint POST listo!"
