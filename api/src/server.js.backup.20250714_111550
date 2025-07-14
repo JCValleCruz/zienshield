@@ -250,70 +250,6 @@ app.post('/api/companies', async (req, res) => {
   }
 });
 
-// 🗑️ ELIMINAR EMPRESA
-app.delete('/api/companies/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    console.log('🗑️ Eliminando empresa con ID:', id);
-    
-    // Verificar que el ID es válido
-    if (!id || isNaN(parseInt(id))) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID de empresa inválido'
-      });
-    }
-    
-    // Verificar que la empresa existe
-    const checkResult = await pool.query('SELECT id, name FROM companies WHERE id = $1', [id]);
-    
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Empresa no encontrada'
-      });
-    }
-    
-    const companyName = checkResult.rows[0].name;
-    
-    // Eliminar empresa
-    const deleteResult = await pool.query('DELETE FROM companies WHERE id = $1 RETURNING id', [id]);
-    
-    if (deleteResult.rows.length > 0) {
-      console.log(`✅ Empresa eliminada exitosamente: ${companyName} (ID: ${id})`);
-      
-      res.json({
-        success: true,
-        message: `Empresa "${companyName}" eliminada exitosamente`,
-        data: {
-          id: parseInt(id),
-          name: companyName
-        }
-      });
-    } else {
-      throw new Error('No se pudo eliminar la empresa');
-    }
-    
-  } catch (error) {
-    console.error('❌ Error eliminando empresa:', error);
-    
-    // Manejar errores específicos de PostgreSQL
-    if (error.code === '23503') { // Foreign key violation
-      return res.status(409).json({
-        success: false,
-        error: 'No se puede eliminar la empresa porque tiene datos relacionados'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      error: 'Error interno del servidor',
-      details: error.message
-    });
-  }
-});
-
 // Iniciar servidor
 app.listen(PORT, async () => {
   console.log('🚀 ZienSHIELD API iniciando...');
@@ -321,7 +257,6 @@ app.listen(PORT, async () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🏢 Empresas: http://localhost:${PORT}/api/companies`);
   console.log(`➕ Crear empresa: POST http://localhost:${PORT}/api/companies`);
-  console.log(`🗑️ Eliminar empresa: DELETE http://localhost:${PORT}/api/companies/:id`);
   console.log('🌐 CORS configurado para frontend en puerto 3000');
   console.log('');
   

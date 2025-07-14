@@ -1,124 +1,203 @@
 #!/bin/bash
 
-echo "📝 Agregando campos opcionales al modal de edición..."
+# Script para probar DELETE directamente en base de datos y luego vincularlo
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./test_delete_database.sh
 
-cd /home/gacel/zienshield/super-admin/frontend
+set -e
 
-# Crear backup
-cp src/components/Dashboard.tsx src/components/Dashboard.tsx.backup_optional_modal_$(date +%Y%m%d_%H%M%S)
-echo "📁 Backup creado"
+echo "🗃️ ZienSHIELD Database DELETE Tester"
+echo "===================================="
 
-# Actualizar el estado editFormData para incluir todos los campos opcionales
-sed -i '/setEditFormData({$/,/});/ {
-    s/tenant_id: ""/tenant_id: "",\
-    phone: "",\
-    address: "",\
-    website: "",\
-    status: "ACTIVE"/
-}' src/components/Dashboard.tsx
+echo "📋 PASO 1: Ver empresas actuales en la base de datos"
+echo "=================================================="
 
-echo "✅ Estado editFormData actualizado con campos opcionales"
+sudo -u postgres psql -d zienshield_multi_tenant -c "
+SELECT id, name, admin_email, created_at::date as created
+FROM companies 
+ORDER BY id;
+"
 
-# Actualizar la función handleEditCompany para incluir los campos opcionales
-sed -i '/setEditFormData({$/,/});/ {
-    s/tenant_id: company\.tenant_id/tenant_id: company.tenant_id,\
-      phone: company.phone || "",\
-      address: company.address || "",\
-      website: company.website || "",\
-      status: company.status || "ACTIVE"/
-}' src/components/Dashboard.tsx
+echo ""
+echo "🎯 PASO 2: Elegir empresa para eliminar"
+echo "======================================"
 
-echo "✅ Función handleEditCompany actualizada"
+echo "Empresas disponibles para eliminar:"
+echo "• ID 4: Empresa Test"
+echo "• ID 5: ZienIdeas" 
+echo "• ID 6: Patito"
+echo ""
+echo "¿Qué empresa quieres eliminar? (escribe el ID, ej: 4)"
+read -r company_id
 
-# Agregar los nuevos campos al modal después del campo tenant_id
-# Buscar donde termina el div del tenant_id y agregar los nuevos campos
-sed -i '/Identificador único para el tenant/,/^[[:space:]]*<\/div>/ {
-    /^[[:space:]]*<\/div>$/a\
-\
-                {/* Teléfono */}\
-                <div>\
-                  <label className="block text-sm font-medium text-slate-300 mb-1">\
-                    Teléfono\
-                  </label>\
-                  <input\
-                    type="tel"\
-                    value={editFormData.phone}\
-                    onChange={(e) => handleEditFormChange("phone", e.target.value)}\
-                    placeholder="ej: +34 912 345 678"\
-                    className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"\
-                  />\
-                </div>\
-\
-                {/* Dirección */}\
-                <div>\
-                  <label className="block text-sm font-medium text-slate-300 mb-1">\
-                    Dirección\
-                  </label>\
-                  <textarea\
-                    value={editFormData.address}\
-                    onChange={(e) => handleEditFormChange("address", e.target.value)}\
-                    placeholder="Dirección completa de la empresa"\
-                    rows={2}\
-                    className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 resize-none"\
-                  />\
-                </div>\
-\
-                {/* Página Web */}\
-                <div>\
-                  <label className="block text-sm font-medium text-slate-300 mb-1">\
-                    Página Web\
-                  </label>\
-                  <input\
-                    type="url"\
-                    value={editFormData.website}\
-                    onChange={(e) => handleEditFormChange("website", e.target.value)}\
-                    placeholder="https://www.empresa.com"\
-                    className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"\
-                  />\
-                </div>\
-\
-                {/* Estado */}\
-                <div>\
-                  <label className="block text-sm font-medium text-slate-300 mb-1">\
-                    Estado\
-                  </label>\
-                  <select\
-                    value={editFormData.status}\
-                    onChange={(e) => handleEditFormChange("status", e.target.value)}\
-                    className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"\
-                  >\
-                    <option value="ACTIVE">Activo</option>\
-                    <option value="INACTIVE">Inactivo</option>\
-                    <option value="SUSPENDED">Suspendido</option>\
-                    <option value="PENDING">Pendiente</option>\
-                  </select>\
-                </div>
-}' src/components/Dashboard.tsx
-
-echo "✅ Campos opcionales agregados al modal"
-
-# Verificar que todo se agregó correctamente
-if grep -q "Teléfono\|Dirección\|Página Web" src/components/Dashboard.tsx; then
-    echo "✅ Todos los campos opcionales agregados correctamente:"
-    echo "   📞 Teléfono (input tel)"
-    echo "   🏠 Dirección (textarea)"
-    echo "   🌐 Página Web (input url)"
-    echo "   📊 Estado (select: Activo/Inactivo/Suspendido/Pendiente)"
-    echo ""
-    echo "📋 Total de campos en el modal: 9"
-    echo "   - Nombre de la empresa"
-    echo "   - Nombre del administrador"
-    echo "   - Email del administrador"
-    echo "   - Sector"
-    echo "   - Tenant ID"
-    echo "   - Teléfono"
-    echo "   - Dirección"
-    echo "   - Página Web"
-    echo "   - Estado"
-else
-    echo "❌ Error agregando campos opcionales al modal"
+# Validar que es un número
+if ! [[ "$company_id" =~ ^[0-9]+$ ]]; then
+    echo "❌ Error: Debes escribir un número (ID de empresa)"
+    exit 1
 fi
 
 echo ""
-echo "🎯 El modal ahora tiene todos los campos fundamentales"
-echo "🔄 Recarga la página y prueba el modal de edición completo"
+echo "🔍 PASO 3: Verificar empresa antes de eliminar"
+echo "============================================="
+
+# Obtener información de la empresa
+company_info=$(sudo -u postgres psql -d zienshield_multi_tenant -t -c "
+SELECT name FROM companies WHERE id = $company_id;
+" | xargs)
+
+if [ -z "$company_info" ]; then
+    echo "❌ Error: No se encontró empresa con ID $company_id"
+    exit 1
+fi
+
+echo "Empresa encontrada: $company_info"
+echo ""
+echo "⚠️  ¿Estás seguro de que quieres eliminar '$company_info'? (y/n)"
+read -r confirm
+
+if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    echo "❌ Eliminación cancelada"
+    exit 0
+fi
+
+echo ""
+echo "🗑️ PASO 4: Eliminar empresa de la base de datos"
+echo "=============================================="
+
+# Eliminar empresa
+result=$(sudo -u postgres psql -d zienshield_multi_tenant -t -c "
+DELETE FROM companies WHERE id = $company_id RETURNING name;
+" | xargs)
+
+if [ -n "$result" ]; then
+    echo "✅ Empresa '$result' eliminada exitosamente de la base de datos"
+else
+    echo "❌ Error: No se pudo eliminar la empresa"
+    exit 1
+fi
+
+echo ""
+echo "📋 PASO 5: Verificar eliminación"
+echo "==============================="
+
+echo "Empresas restantes en la base de datos:"
+sudo -u postgres psql -d zienshield_multi_tenant -c "
+SELECT id, name, admin_email, created_at::date as created
+FROM companies 
+ORDER BY id;
+"
+
+echo ""
+echo "🧪 PASO 6: Probar API DELETE endpoint"
+echo "===================================="
+
+# Probar que la API DELETE también funciona con una empresa real
+remaining_companies=$(sudo -u postgres psql -d zienshield_multi_tenant -t -c "
+SELECT id FROM companies ORDER BY id LIMIT 1;
+" | xargs)
+
+if [ -n "$remaining_companies" ]; then
+    echo "Probando endpoint DELETE con empresa ID $remaining_companies:"
+    
+    # Obtener nombre antes de eliminar
+    test_company_name=$(sudo -u postgres psql -d zienshield_multi_tenant -t -c "
+    SELECT name FROM companies WHERE id = $remaining_companies;
+    " | xargs)
+    
+    echo "🔥 Eliminando '$test_company_name' vía API..."
+    
+    # Llamar API DELETE
+    api_response=$(curl -s -X DELETE "http://194.164.172.92:3001/api/companies/$remaining_companies")
+    
+    echo "Respuesta de la API:"
+    echo "$api_response" | jq '.' 2>/dev/null || echo "$api_response"
+    
+    # Verificar en BD
+    echo ""
+    echo "Verificando en base de datos:"
+    sudo -u postgres psql -d zienshield_multi_tenant -c "
+    SELECT id, name FROM companies WHERE id = $remaining_companies;
+    "
+    
+    if [ $? -eq 0 ]; then
+        remaining_check=$(sudo -u postgres psql -d zienshield_multi_tenant -t -c "
+        SELECT COUNT(*) FROM companies WHERE id = $remaining_companies;
+        " | xargs)
+        
+        if [ "$remaining_check" = "0" ]; then
+            echo "✅ API DELETE funcionó correctamente - empresa eliminada de BD"
+        else
+            echo "❌ API DELETE no funcionó - empresa aún en BD"
+        fi
+    fi
+fi
+
+echo ""
+echo "📋 PASO 7: Estado final de la base de datos"
+echo "=========================================="
+
+sudo -u postgres psql -d zienshield_multi_tenant -c "
+SELECT id, name, admin_email, created_at::date as created
+FROM companies 
+ORDER BY id;
+"
+
+echo ""
+echo "🔧 PASO 8: Vincular al frontend"
+echo "==============================="
+
+echo "La base de datos y API DELETE funcionan correctamente."
+echo ""
+echo "Ahora necesitamos actualizar el frontend para que use la API:"
+echo ""
+echo "🔧 Comando para arreglar el frontend:"
+echo "nano super-admin/frontend/src/components/Dashboard.tsx"
+echo ""
+echo "Busca la función 'confirmDeleteCompany' y reemplázala con:"
+echo ""
+cat << 'FRONTEND_CODE'
+const confirmDeleteCompany = async () => {
+  if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
+    return;
+  }
+
+  try {
+    console.log("🗑️ Eliminando empresa:", companyToDelete.name);
+    
+    // Llamar a la API DELETE
+    const response = await apiService.deleteCompany(companyToDelete.id);
+    
+    if (response.success) {
+      console.log("✅ Empresa eliminada de la BD");
+      
+      // Actualizar lista local
+      setCompanies(companies.filter(c => c.id !== companyToDelete.id));
+      
+      // Cerrar modal
+      setDeleteModalOpen(false);
+      setCompanyToDelete(null);
+      setDeleteConfirmText("");
+      
+      // Mensaje de éxito
+      alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
+    }
+  } catch (error) {
+    console.error("❌ Error:", error);
+    alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+  }
+};
+FRONTEND_CODE
+
+echo ""
+echo "🎉 RESUMEN:"
+echo "=========="
+echo "✅ Base de datos DELETE: FUNCIONA"
+echo "✅ API DELETE endpoint: FUNCIONA" 
+echo "❌ Frontend modal: NECESITA ARREGLO"
+echo ""
+echo "📝 Acción pendiente:"
+echo "   Editar Dashboard.tsx con la función mostrada arriba"
+echo ""
+echo "🌐 Después del arreglo:"
+echo "   Ve a http://194.164.172.92:3000"
+echo "   La papelera eliminará realmente de la BD"

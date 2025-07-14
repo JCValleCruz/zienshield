@@ -66,34 +66,19 @@ const Dashboard: React.FC = () => {
     setDeleteConfirmText("");
   };
 
-    const confirmDeleteCompany = async () => {
+  const confirmDeleteCompany = async () => {
     if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
       return;
     }
 
     try {
-      console.log("🗑️ Eliminando empresa:", companyToDelete.name);
-      
-      // Llamar a la API DELETE
-      const response = await apiService.deleteCompany(companyToDelete.id);
-      
-      if (response.success) {
-        console.log("✅ Empresa eliminada de la BD");
-        
-        // Actualizar lista local
-        setCompanies(companies.filter(c => c.id !== companyToDelete.id));
-        
-        // Cerrar modal
-        setDeleteModalOpen(false);
-        setCompanyToDelete(null);
-        setDeleteConfirmText("");
-        
-        // Mensaje de éxito
-        alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
-      }
+      console.log("Eliminando empresa:", companyToDelete.name);
+      setCompanies(companies.filter(c => c.id !== companyToDelete.id));
+      setDeleteModalOpen(false);
+      setCompanyToDelete(null);
+      setDeleteConfirmText("");
     } catch (error) {
-      console.error("❌ Error:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error("Error eliminando empresa:", error);
     }
   };
 

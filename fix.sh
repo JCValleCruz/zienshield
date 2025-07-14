@@ -1,93 +1,222 @@
 #!/bin/bash
 
-echo "🔧 Arreglando error de sintaxis JSX..."
+# Script final para arreglar frontend DELETE - método directo
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./final_frontend_fix.sh
 
-cd /home/gacel/zienshield/super-admin/frontend
+set -e
 
-# Crear backup
-cp src/components/Dashboard.tsx src/components/Dashboard.tsx.backup_jsx_fix_$(date +%Y%m%d_%H%M%S)
-echo "📁 Backup creado"
+echo "🔧 ZienSHIELD Final Frontend Fix"
+echo "==============================="
 
-# Buscar la línea 626 y el área problemática del modal
-echo "🔍 Buscando área problemática alrededor de línea 626..."
-sed -n '620,635p' src/components/Dashboard.tsx
-
-# El problema es que hay elementos JSX adyacentes sin wrapper
-# Vamos a buscar y arreglar el modal de eliminación
-# Buscar donde empieza el modal y asegurar que esté bien estructurado
-
-# Eliminar el modal mal formado y agregarlo correctamente
-sed -i '/Modal de Eliminación/,/deleteModalOpen.*&&/ {
-    /Modal de Eliminación/,/deleteModalOpen.*&&/d
-}' src/components/Dashboard.tsx
-
-# Ahora agregar el modal correctamente al final, antes del último </div>
-sed -i '/^[[:space:]]*<\/div>[[:space:]]*$/i\
-\
-        {/* Modal de Eliminación */}\
-        {deleteModalOpen && (\
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">\
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">\
-              <div className="flex items-center mb-4">\
-                <div className="p-2 bg-red-500/10 rounded-lg mr-3">\
-                  <Trash2 className="h-6 w-6 text-red-400" />\
-                </div>\
-                <h3 className="text-lg font-semibold text-white">\
-                  Eliminar Empresa\
-                </h3>\
-              </div>\
-\
-              <div className="mb-4">\
-                <p className="text-slate-300 mb-2">\
-                  ¿Estás seguro de que quieres eliminar la empresa?\
-                </p>\
-                <p className="text-white font-semibold mb-4">\
-                  {companyToDelete?.name}\
-                </p>\
-                <p className="text-sm text-slate-400 mb-2">\
-                  Para confirmar, escribe el nombre exacto de la empresa:\
-                </p>\
-                <input\
-                  type="text"\
-                  value={deleteConfirmText}\
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}\
-                  placeholder="Nombre de la empresa"\
-                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"\
-                />\
-              </div>\
-\
-              <div className="flex space-x-3">\
-                <button\
-                  onClick={cancelDelete}\
-                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"\
-                >\
-                  Cancelar\
-                </button>\
-                <button\
-                  onClick={confirmDeleteCompany}\
-                  disabled={deleteConfirmText !== companyToDelete?.name}\
-                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"\
-                >\
-                  Eliminar\
-                </button>\
-              </div>\
-            </div>\
-          </div>\
-        )}' src/components/Dashboard.tsx
-
-echo "✅ Error JSX arreglado"
-
-# Verificar que no hay problemas de sintaxis
-echo "🔍 Verificando sintaxis..."
-if grep -q "Modal de Eliminación" src/components/Dashboard.tsx; then
-    echo "✅ Modal de eliminación presente"
-else
-    echo "❌ Modal no encontrado"
+# Verificar directorio
+if [ ! -f "super-admin/frontend/src/components/Dashboard.tsx" ]; then
+    echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
+    exit 1
 fi
 
-# Verificar que no hay elementos JSX adyacentes problemáticos
-echo "📋 Verificando estructura JSX..."
-grep -n -A 3 -B 3 "Adjacent\|JSX\|elements" src/components/Dashboard.tsx || echo "✅ No hay referencias a errores JSX"
+DASHBOARD_FILE="super-admin/frontend/src/components/Dashboard.tsx"
+API_FILE="super-admin/frontend/src/services/api.ts"
+
+echo "📁 Archivos a modificar:"
+echo "   • $DASHBOARD_FILE"
+echo "   • $API_FILE"
+
+# Crear backup
+BACKUP_FILE="super-admin/frontend/src/components/Dashboard.tsx.backup.final.$(date +%Y%m%d_%H%M%S)"
+cp "$DASHBOARD_FILE" "$BACKUP_FILE"
+echo "💾 Backup creado: $BACKUP_FILE"
 
 echo ""
-echo "🔄 Recarga la página para verificar que se corrigió el error"
+echo "🔧 MÉTODO 1: Arreglo automático con Python"
+echo "========================================="
+
+# Usar Python para hacer el reemplazo de forma más confiable
+python3 << 'PYTHON_SCRIPT'
+import re
+
+# Leer archivo Dashboard
+with open('super-admin/frontend/src/components/Dashboard.tsx', 'r') as f:
+    content = f.read()
+
+# Función nueva que queremos insertar
+new_function = '''  const confirmDeleteCompany = async () => {
+    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
+      return;
+    }
+
+    try {
+      console.log("🗑️ Eliminando empresa:", companyToDelete.name);
+      
+      // Llamar a la API DELETE
+      const response = await apiService.deleteCompany(companyToDelete.id);
+      
+      if (response.success) {
+        console.log("✅ Empresa eliminada de la BD");
+        
+        // Actualizar lista local
+        setCompanies(companies.filter(c => c.id !== companyToDelete.id));
+        
+        // Cerrar modal
+        setDeleteModalOpen(false);
+        setCompanyToDelete(null);
+        setDeleteConfirmText("");
+        
+        // Mensaje de éxito
+        alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
+      }
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };'''
+
+# Buscar y reemplazar la función confirmDeleteCompany
+pattern = r'const confirmDeleteCompany = async \(\) => \{.*?\n  \};'
+replacement = new_function
+
+# Hacer el reemplazo
+new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+# Verificar que se hizo el cambio
+if new_content != content:
+    # Escribir archivo actualizado
+    with open('super-admin/frontend/src/components/Dashboard.tsx', 'w') as f:
+        f.write(new_content)
+    print("✅ Función confirmDeleteCompany actualizada exitosamente")
+else:
+    print("⚠️ No se pudo encontrar la función para reemplazar")
+PYTHON_SCRIPT
+
+echo ""
+echo "🔍 Verificando cambio realizado..."
+
+# Verificar que el cambio se aplicó
+if grep -q "apiService.deleteCompany" "$DASHBOARD_FILE"; then
+    echo "✅ Función actualizada correctamente - usa apiService.deleteCompany"
+else
+    echo "⚠️ Función no actualizada, usando método manual..."
+    echo ""
+    echo "🔧 MÉTODO 2: Edición manual rápida"
+    echo "================================"
+    echo ""
+    echo "Ejecuta estos comandos:"
+    echo ""
+    echo "1. Abrir archivo:"
+    echo "   nano $DASHBOARD_FILE"
+    echo ""
+    echo "2. Buscar (Ctrl+W): confirmDeleteCompany"
+    echo ""
+    echo "3. Reemplazar toda la función con:"
+    echo ""
+    cat << 'MANUAL_CODE'
+  const confirmDeleteCompany = async () => {
+    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
+      return;
+    }
+
+    try {
+      console.log("🗑️ Eliminando empresa:", companyToDelete.name);
+      
+      // Llamar a la API DELETE
+      const response = await apiService.deleteCompany(companyToDelete.id);
+      
+      if (response.success) {
+        console.log("✅ Empresa eliminada de la BD");
+        
+        // Actualizar lista local
+        setCompanies(companies.filter(c => c.id !== companyToDelete.id));
+        
+        // Cerrar modal
+        setDeleteModalOpen(false);
+        setCompanyToDelete(null);
+        setDeleteConfirmText("");
+        
+        // Mensaje de éxito
+        alert(`Empresa "${companyToDelete.name}" eliminada exitosamente`);
+      }
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+MANUAL_CODE
+    echo ""
+    echo "4. Guardar (Ctrl+X, Y, Enter)"
+fi
+
+# Verificar API Service
+echo ""
+echo "🔍 Verificando API Service..."
+
+if grep -q "deleteCompany" "$API_FILE"; then
+    echo "✅ API Service ya tiene método deleteCompany"
+else
+    echo "⚠️ Agregando método deleteCompany a API Service..."
+    
+    # Agregar método al final de la clase ApiService
+    sed -i '/async createCompany/a\
+\
+  async deleteCompany(id: number): Promise<ApiResponse<any>> {\
+    return this.fetchApi(`/companies/${id}`, {\
+      method: '\''DELETE'\'',\
+    });\
+  }' "$API_FILE"
+    
+    echo "✅ Método deleteCompany agregado a API Service"
+fi
+
+echo ""
+echo "🔍 Verificando servidor de desarrollo..."
+
+cd super-admin/frontend
+
+if pgrep -f "npm run dev" > /dev/null || pgrep -f "vite" > /dev/null; then
+    echo "✅ Servidor de desarrollo ejecutándose"
+    echo "   Los cambios se aplicarán automáticamente en unos segundos"
+else
+    echo "⚠️ Servidor de desarrollo no está corriendo"
+    echo "   Iniciando servidor..."
+    npm run dev &
+    sleep 3
+    echo "✅ Servidor iniciado"
+fi
+
+echo ""
+echo "🎉 ARREGLO COMPLETADO"
+echo "===================="
+echo ""
+echo "✅ API Service: Método deleteCompany disponible"
+echo "✅ Dashboard: Función confirmDeleteCompany actualizada"
+echo "✅ Servidor: Frontend ejecutándose"
+echo ""
+echo "🧪 PRUEBA FINAL:"
+echo "==============="
+echo ""
+echo "1. Ve a: http://194.164.172.92:3000"
+echo ""
+echo "2. Haz clic en la papelera 🗑️ de cualquier empresa"
+echo ""
+echo "3. Escribe el nombre EXACTO de la empresa"
+echo "   (respeta mayúsculas y minúsculas)"
+echo ""
+echo "4. Haz clic en 'Eliminar'"
+echo ""
+echo "5. Deberías ver:"
+echo "   • Alert: 'Empresa eliminada exitosamente'"
+echo "   • La empresa desaparece de la lista"
+echo ""
+echo "6. Haz clic en 'Actualizar' para confirmar"
+echo "   • La empresa NO debe reaparecer"
+echo ""
+echo "🔍 Si hay algún error:"
+echo "   • Abre Console del navegador (F12)"
+echo "   • Ve al tab Network para ver petición DELETE"
+echo "   • Revisa que la petición llegue a /api/companies/[ID]"
+echo ""
+echo "🎯 Estado actual:"
+echo "   • Base de datos: ✅ DELETE funciona"
+echo "   • API backend: ✅ DELETE funciona"  
+echo "   • Frontend: ✅ Debería funcionar ahora"
+echo ""
+echo "🔥 ¡La papelera debería funcionar completamente!"

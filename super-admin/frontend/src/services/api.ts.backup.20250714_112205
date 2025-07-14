@@ -70,15 +70,15 @@ class ApiService {
   }
 
   async createCompany(companyData: CreateCompanyData): Promise<ApiResponse<Company>> {
-    return this.fetchApi('/companies', {
-      method: 'POST',
-      body: JSON.stringify(companyData),
-    });
-  }
 
   async deleteCompany(id: number): Promise<ApiResponse<any>> {
     return this.fetchApi(`/companies/${id}`, {
       method: 'DELETE',
+    });
+  }
+    return this.fetchApi('/companies', {
+      method: 'POST',
+      body: JSON.stringify(companyData),
     });
   }
 }
