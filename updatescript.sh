@@ -1,3 +1,44 @@
+#!/bin/bash
+
+# Script para actualizar Dashboard.tsx con versión limpia
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./update_dashboard.sh
+
+set -e  # Salir si hay algún error
+
+echo "🔧 ZienSHIELD Dashboard Update Script"
+echo "===================================="
+
+# Verificar que estamos en el directorio correcto
+if [ ! -d "super-admin/frontend" ]; then
+    echo "❌ Error: Este script debe ejecutarse desde /home/gacel/zienshield"
+    echo "   Directorio actual: $(pwd)"
+    exit 1
+fi
+
+# Definir rutas
+FRONTEND_DIR="super-admin/frontend"
+DASHBOARD_FILE="$FRONTEND_DIR/src/components/Dashboard.tsx"
+BACKUP_FILE="$FRONTEND_DIR/src/components/Dashboard.tsx.backup.$(date +%Y%m%d_%H%M%S)"
+
+echo "📁 Directorio frontend: $FRONTEND_DIR"
+echo "📄 Archivo Dashboard: $DASHBOARD_FILE"
+
+# Verificar que el archivo existe
+if [ ! -f "$DASHBOARD_FILE" ]; then
+    echo "❌ Error: No se encuentra el archivo Dashboard.tsx"
+    echo "   Ruta buscada: $DASHBOARD_FILE"
+    exit 1
+fi
+
+# Crear backup
+echo "💾 Creando backup..."
+cp "$DASHBOARD_FILE" "$BACKUP_FILE"
+echo "✅ Backup creado: $BACKUP_FILE"
+
+# Crear el nuevo Dashboard.tsx limpio
+echo "🛠️  Actualizando Dashboard.tsx..."
+cat > "$DASHBOARD_FILE" << 'EOF'
 import React, { useState, useEffect } from 'react';
 import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2 } from 'lucide-react';
 import { apiService, Company } from '../services/api';
@@ -336,3 +377,48 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+EOF
+
+echo "✅ Dashboard.tsx actualizado exitosamente"
+
+# Verificar que el servidor de desarrollo está corriendo
+cd "$FRONTEND_DIR"
+
+echo ""
+echo "🔍 Verificando estado del servidor de desarrollo..."
+
+if pgrep -f "npm run dev" > /dev/null || pgrep -f "vite" > /dev/null; then
+    echo "🟢 El servidor de desarrollo está ejecutándose"
+    echo "   Los cambios se aplicarán automáticamente"
+else
+    echo "🟡 El servidor de desarrollo no está ejecutándose"
+    echo "   ¿Quieres iniciarlo? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "🚀 Iniciando servidor de desarrollo..."
+        npm run dev &
+        echo "✅ Servidor iniciado en segundo plano"
+        echo "   Dashboard disponible en: http://194.164.172.92:3000"
+    fi
+fi
+
+echo ""
+echo "📋 Resumen de cambios:"
+echo "   ✅ Backup creado: $BACKUP_FILE"
+echo "   ✅ Dashboard.tsx actualizado con versión limpia"
+echo "   ✅ Modal de eliminación funcional"
+echo "   ✅ Grid de 4 métricas empresariales"
+echo "   ✅ Botón papelera correctamente posicionado"
+echo ""
+echo "🌐 Accede al dashboard en: http://194.164.172.92:3000"
+echo "🎉 ¡Dashboard limpio y listo!"
+EOF
+
+# Hacer el script ejecutable
+chmod +x update_dashboard.sh
+
+echo "✅ Script creado exitosamente: update_dashboard.sh"
+echo ""
+echo "🚀 Para ejecutar:"
+echo "   cd /home/gacel/zienshield"
+echo "   ./update_dashboard.sh"
