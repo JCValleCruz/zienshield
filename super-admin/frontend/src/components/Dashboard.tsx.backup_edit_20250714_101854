@@ -61,6 +61,7 @@ const Dashboard: React.FC = () => {
 
     try {
       console.log("Eliminando empresa:", companyToDelete.name);
+      // TODO: Aquí irá la llamada a la API
       
       // Remover de la lista local por ahora
       setCompanies(companies.filter(c => c.id !== companyToDelete.id));
@@ -548,7 +549,9 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Métricas Generales */}
+        {/* Métricas Generales - ZienSHIELD Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Empresas Registradas */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -560,23 +563,6 @@ const Dashboard: React.FC = () => {
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center mb-4">
                 <div className="p-2 bg-red-500/10 rounded-lg mr-3">
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white">
@@ -730,7 +716,7 @@ const Dashboard: React.FC = () => {
         )}
               </div>
               <div className="text-sm text-slate-400">
-                Empresas registradas
+                Empresas Registradas
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -888,6 +874,7 @@ const Dashboard: React.FC = () => {
         )}
           </div>
 
+          {/* Empresas Activas */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-green-500/10 rounded-lg">
@@ -1210,10 +1197,11 @@ const Dashboard: React.FC = () => {
         )}
           </div>
 
+          {/* Equipos Totales */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-purple-500/10 rounded-lg">
-                <Users className="h-6 w-6 text-purple-400" />
+                <Monitor className="h-6 w-6 text-purple-400" />
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -1384,30 +1372,152 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 bg-red-500/10 rounded-lg mr-3">
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
+              </div>
 
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
               </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+              </div>
+
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
             </div>
 
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
+          </div>
+        )}
           </div>
 
           {/* Alertas Totales */}
@@ -1415,26 +1525,176 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-red-500/10 rounded-lg">
                 <AlertTriangle className="h-6 w-6 text-red-400" />
+
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
               </div>
+
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+              </div>
+
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-1">
                 0
+
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  Eliminar Empresa
+                </h3>
               </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
+
+              <div className="mb-4">
+                <p className="text-slate-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar la empresa?
+                </p>
+                <p className="text-white font-semibold mb-4">
+                  {companyToDelete?.name}
+                </p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Para confirmar, escribe el nombre exacto de la empresa:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Nombre de la empresa"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteCompany}
+                  disabled={deleteConfirmText !== companyToDelete?.name}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
           </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
+        )}
               </div>
               <div className="text-sm text-slate-400">
                 Alertas Totales
-              </div>
-            </div>
-          </div>
+
+        {/* Modal de Eliminación */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
                 <h3 className="text-lg font-semibold text-white">
                   Eliminar Empresa
                 </h3>

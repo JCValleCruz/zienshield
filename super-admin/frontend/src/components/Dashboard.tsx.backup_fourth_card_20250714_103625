@@ -560,23 +560,6 @@ const Dashboard: React.FC = () => {
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center mb-4">
                 <div className="p-2 bg-red-500/10 rounded-lg mr-3">
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white">
@@ -1392,40 +1375,6 @@ const Dashboard: React.FC = () => {
                 <AlertTriangle className="h-6 w-6 text-red-400" />
               </div>
             </div>
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
             <div>
               <div className="text-3xl font-bold text-white mb-1">
                 0

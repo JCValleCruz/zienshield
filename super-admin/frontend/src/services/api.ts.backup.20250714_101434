@@ -6,11 +6,6 @@ export interface Company {
   name: string;
   sector: string;
   tenant_id: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  status?: string;
-  updated_at?: string;
   admin_name: string;
   admin_email: string;
   created_at: string;
@@ -60,4 +55,34 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+
+// Función para eliminar empresa
+const deleteCompany = async (id: string): Promise<ApiResponse<Company>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/companies/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    return {
+      success: true,
+      data: data.data,
+      message: data.message
+    };
+  } catch (error) {
+    console.error("Error eliminando empresa:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido"
+    };
+  }
+};
 

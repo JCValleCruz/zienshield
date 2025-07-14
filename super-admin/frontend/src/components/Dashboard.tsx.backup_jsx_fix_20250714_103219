@@ -547,19 +547,58 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Métricas Generales */}
+        {/* Métricas Generales - ZienSHIELD Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Empresas Registradas */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Building2 className="h-6 w-6 text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {companies.length}
+              </div>
+              <div className="text-sm text-slate-400">
+                Empresas Registradas
+              </div>
+            </div>
+          </div>
 
-        {/* Modal de Eliminación */}
-        {deleteModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-red-500/10 rounded-lg mr-3">
+          {/* Empresas Activas */}
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Shield className="h-6 w-6 text-green-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                0
+              </div>
+              <div className="text-sm text-slate-400">
+                Empresas Activas
+              </div>
+            </div>
+          </div>
+
+          {/* Equipos Totales */}
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <Monitor className="h-6 w-6 text-purple-400" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                0
+              </div>
+              <div className="text-sm text-slate-400">
+                Equipos Totales
+              </div>
+            </div>
+          </div>
 
           {/* Alertas Totales */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
@@ -577,7 +616,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
-                  <Trash2 className="h-6 w-6 text-red-400" />
+        </div>
                 </div>
                 <h3 className="text-lg font-semibold text-white">
                   Eliminar Empresa
@@ -998,7 +1037,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-1">
-                0
+                100%
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -1052,7 +1091,7 @@ const Dashboard: React.FC = () => {
         )}
               </div>
               <div className="text-sm text-slate-400">
-                Empresas Activas
+                Sistema operativo
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -1320,7 +1359,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-1">
-                0
+                {companies.length * 2}
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -1374,7 +1413,7 @@ const Dashboard: React.FC = () => {
         )}
               </div>
               <div className="text-sm text-slate-400">
-                Equipos Totales
+                Usuarios activos
 
         {/* Modal de Eliminación */}
         {deleteModalOpen && (
@@ -1384,57 +1423,6 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 bg-red-500/10 rounded-lg mr-3">
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
-
-          {/* Alertas Totales */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
-            <div>
-              <div className="text-3xl font-bold text-white mb-1">
-                0
-              </div>
-              <div className="text-sm text-slate-400">
-                Alertas Totales
-              </div>
-            </div>
-          </div>
                 <h3 className="text-lg font-semibold text-white">
                   Eliminar Empresa
                 </h3>

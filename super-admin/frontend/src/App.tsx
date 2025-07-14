@@ -1,63 +1,42 @@
 import React, { useState } from 'react';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
 import './App.css';
+import Dashboard from './components/Dashboard';
 
 interface User {
+  id: string;
   email: string;
-  name: string;
-}
-
-interface LoginCredentials {
-  email: string;
-  password: string;
+  role: string;
 }
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
-
-  const handleLogin = async (credentials: LoginCredentials): Promise<boolean> => {
-    try {
-      // Simular autenticación (después conectaremos con la API real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Credenciales de prueba
-      if (credentials.email === 'admin@zienshield.com' && credentials.password === 'ZienAdmin2025') {
-        setUser({
-          email: credentials.email,
-          name: 'Super Admin'
-        });
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error en login:', error);
-      return false;
-    }
-  };
+  const [user, setUser] = useState<User | null>({
+    id: '1',
+    email: 'admin@zienshield.com',
+    role: 'super-admin'
+  });
 
   const handleLogout = () => {
     setUser(null);
   };
 
-  // Si no hay usuario, mostrar login
+  // Si no hay usuario, mostrar login (por ahora solo dashboard)
   if (!user) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <div className="App">
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">ZienSHIELD Admin</h1>
+            <p className="text-gray-600">Acceso no autorizado</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Si hay usuario, mostrar dashboard
+  // Si hay usuario, mostrar dashboard (SIN botón de logout)
   return (
     <div className="App">
       <Dashboard />
-      
-      {/* Botón de logout temporal en la esquina */}
-      <button
-        onClick={handleLogout}
-        className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm z-50"
-      >
-        Cerrar Sesión
-      </button>
     </div>
   );
 }
