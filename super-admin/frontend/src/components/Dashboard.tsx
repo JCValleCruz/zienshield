@@ -22,7 +22,7 @@ const Dashboard: React.FC = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
   // Estado del formulario
-  const [formData, setFormData] = useState<CreateCompanyData>({
+  const [formData, setFormData] = useState({
     name: '',
     sector: '',
     admin_name: '',
@@ -189,17 +189,17 @@ const Dashboard: React.FC = () => {
     setShowPassword(false);
   };
 
-  const handleInputChange = (field: keyof CreateCompanyData, value: string) => {
-    setFormData((prev: CreateCompanyData) => ({ 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ 
       ...prev, 
       [field]: value || '' // Asegurar que nunca sea undefined
     }));
     
     // Limpiar error del campo cuando el usuario empiece a escribir
-    if (formErrors[field as string]) {
+    if (formErrors[field]) {
       setFormErrors((prev: Record<string, string>) => {
         const newErrors = { ...prev };
-        delete newErrors[field as string];
+        delete newErrors[field];
         return newErrors;
       });
     }
@@ -248,32 +248,29 @@ const Dashboard: React.FC = () => {
       setIsCreating(true);
       setCreateError(null);
 
-      // Preparar datos para envío - solo campos que no estén vacíos
+      // ✅ CORREGIDO: Datos preparados para coincidir con backend
       const submitData: CreateCompanyData = {
-        name: formData.name.trim(),
+        company_name: formData.name.trim(),     // ← Cambiar 'name' a 'company_name'
         sector: formData.sector.trim() || 'OTHER',
-        admin_name: formData.admin_name.trim() || 'Administrador',
         admin_phone: formData.admin_phone.trim() || '+34 000 000 000',
         admin_email: formData.admin_email.trim() || `admin@${formData.name.toLowerCase().replace(/\s+/g, '')}.com`,
-        admin_password: formData.admin_password.trim() || 'password123',
-        // Generar tenant_id solo para nuevas empresas
-        ...(isEditMode ? {} : { tenant_id: generateUUID() })
+        admin_password: formData.admin_password.trim() || 'password123'
+        // ❌ NO enviar tenant_id (backend lo genera automáticamente)
+        // ❌ NO enviar admin_name (backend no lo usa actualmente)
       };
 
       console.log('📋 Datos a enviar:', submitData);
       console.log('📋 Datos individuales:', {
-        name: `"${submitData.name}"`,
+        company_name: `"${submitData.company_name}"`,
         sector: `"${submitData.sector}"`,
-        admin_name: `"${submitData.admin_name}"`,
         admin_phone: `"${submitData.admin_phone}"`,
         admin_email: `"${submitData.admin_email}"`,
-        admin_password: `"${submitData.admin_password}"`,
-        tenant_id: `"${submitData.tenant_id || 'NO_TENANT_ID'}"`
+        admin_password: `"${submitData.admin_password}"`
       });
 
       if (isEditMode && editingCompany) {
         // Actualizar empresa existente
-        console.log('✏️ Actualizando empresa:', submitData.name);
+        console.log('✏️ Actualizando empresa:', submitData.company_name);
         const response = await apiService.updateCompany(editingCompany.id, submitData);
 
         if (response.success) {
@@ -292,7 +289,7 @@ const Dashboard: React.FC = () => {
         }
       } else {
         // Crear nueva empresa
-        console.log('➕ Creando empresa:', submitData.name);
+        console.log('➕ Creando empresa:', submitData.company_name);
         console.log('🔗 URL a llamar:', 'http://194.164.172.92:3001/api/companies');
         console.log('📦 Método:', 'POST');
         console.log('📋 Headers:', { 'Content-Type': 'application/json' });

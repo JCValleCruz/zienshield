@@ -25,7 +25,7 @@ async function syncCompanies() {
       
       try {
         // ✅ CORREGIDO: Usar execSync con sudo para manejo síncrono
-        const command = `sudo /var/ossec/bin/agent_groups -a -g ${groupName} -q`;
+        const command = `sudo /var/ossec/bin/agent_groups -a -g ${groupName}`;
         
         try {
           // Ejecutar comando de forma síncrona
