@@ -12,10 +12,10 @@ export interface Company {
   status?: string;
   updated_at?: string;
   admin_name: string;
-  admin_phone: string; // ← AGREGADO: Campo admin_phone
+  admin_phone: string;
   admin_email: string;
   created_at: string;
-  wazuh_group?: string; // ← AGREGADO: Campo wazuh_group
+  wazuh_group?: string;
 }
 
 export interface CreateCompanyData {
@@ -25,6 +25,7 @@ export interface CreateCompanyData {
   admin_phone: string;
   admin_email: string;
   admin_password: string;
+  tenant_id?: string; // ← AGREGADO: Campo tenant_id opcional
 }
 
 export interface ApiResponse<T> {

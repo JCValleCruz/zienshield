@@ -1,247 +1,4 @@
-</div>
-        </div>
-      </div>
-
-      {/* Modal de Agregar Empresa */}
-      {companyModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header del Modal */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-500/10 rounded-lg mr-3">
-                  <Plus className="h-6 w-6 text-green-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white">Agregar Nueva Empresa</h3>
-              </div>
-              <button
-                onClick={closeCompanyModal}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                title="Cerrar sin guardar"
-              >
-                <X className="h-5 w-5 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} className="p-6">
-              {/* Error general */}
-              {createError && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-5 w-5 text-red-400 mr-3" />
-                    <div>
-                      <h4 className="text-red-400 font-medium">Error al crear empresa</h4>
-                      <p className="text-red-300 text-sm mt-1">{createError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Información de la Empresa */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center mb-4">
-                    <Building2 className="h-4 w-4 mr-2 text-blue-400" />
-                    Información de la Empresa
-                  </h4>
-
-                  {/* Nombre de la empresa */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre de la empresa <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Ej: Axafone Telecomunicaciones"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.name ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.name && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.name}</p>
-                    )}
-                  </div>
-
-                  {/* Sector */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Sector <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={formData.sector}
-                      onChange={(e) => handleInputChange('sector', e.target.value)}
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 ${
-                        formErrors.sector ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                    >
-                      <option value="">Seleccionar sector</option>
-                      <option value="TELECOM">Telecomunicaciones</option>
-                      <option value="LEGAL">Legal</option>
-                      <option value="RETAIL">Retail</option>
-                      <option value="TECH">Tecnología</option>
-                      <option value="HEALTH">Salud</option>
-                      <option value="FINANCE">Finanzas</option>
-                      <option value="EDUCATION">Educación</option>
-                      <option value="MANUFACTURING">Manufactura</option>
-                      <option value="OTHER">Otro</option>
-                    </select>
-                    {formErrors.sector && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.sector}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Información del Administrador */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center mb-4">
-                    <Users className="h-4 w-4 mr-2 text-purple-400" />
-                    Administrador
-                  </h4>
-
-                  {/* Nombre del administrador */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre completo <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.admin_name}
-                      onChange={(e) => handleInputChange('admin_name', e.target.value)}
-                      placeholder="Ej: Juan Pérez García"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_name ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.admin_name && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_name}</p>
-                    )}
-                  </div>
-
-                  {/* Teléfono */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Teléfono <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.admin_phone}
-                      onChange={(e) => handleInputChange('admin_phone', e.target.value)}
-                      placeholder="Ej: +34 123 456 789"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_phone ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={20}
-                    />
-                    {formErrors.admin_phone && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_phone}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.admin_email}
-                      onChange={(e) => handleInputChange('admin_email', e.target.value)}
-                      placeholder="Ej: admin@empresa.com"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_email ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.admin_email && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_email}</p>
-                    )}
-                  </div>
-
-                  {/* Contraseña */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Contraseña <span className="text-red-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.admin_password}
-                        onChange={(e) => handleInputChange('admin_password', e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        className={`w-full bg-slate-700 border rounded px-3 py-2 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                          formErrors.admin_password ? 'border-red-500' : 'border-slate-600'
-                        }`}
-                        maxLength={255}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {formErrors.admin_password && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_password}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Información adicional */}
-              <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-                <h5 className="text-slate-300 font-medium mb-2">Información:</h5>
-                <ul className="text-sm text-slate-400 space-y-1">
-                  <li>• Los campos marcados con <span className="text-red-400">*</span> son obligatorios</li>
-                  <li>• Se generará automáticamente un ID único para la empresa</li>
-                  <li>• El administrador podrá acceder al dashboard con estas credenciales</li>
-                </ul>
-              </div>
-
-              {/* Botones */}
-              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-700">
-                <button
-                  type="button"
-                  onClick={closeCompanyModal}
-                  disabled={isCreating}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 text-white rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader className="animate-spin h-4 w-4" />
-                      <span>Creando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      <span>Crear Empresa</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit, RefreshCw } from 'lucide-react';
 import { apiService, Company, CreateCompanyData } from '../services/api';
 import SystemMetricsGrid from './SystemMetricsGrid';
@@ -251,25 +8,6 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Estados para modal de agregar empresa
-  const [companyModalOpen, setCompanyModalOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Estado del formulario
-  const [formData, setFormData] = useState<CreateCompanyData>({
-    name: '',
-    sector: '',
-    admin_name: '',
-    admin_phone: '',
-    admin_email: '',
-    admin_password: ''
-  });
-
-  // Errores de validación
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
   // Estados para modal de eliminación
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
@@ -296,7 +34,47 @@ const Dashboard: React.FC = () => {
   // Errores de validación
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // Estados para sincronización con Wazuh
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Función para generar UUID v4
+  const generateUUID = (): string => {
+    // Usar crypto.randomUUID() si está disponible (navegadores modernos)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    
+    // Fallback para navegadores más antiguos
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  };
+
   useEffect(() => {
+    // Test de conexión API
+    const testApiConnection = async () => {
+      try {
+        console.log('🔍 Probando conexión API...');
+        console.log('🔗 API Base URL:', 'http://194.164.172.92:3001/api');
+        
+        const response = await fetch('http://194.164.172.92:3001/api/health');
+        console.log('📡 Status de conexión:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ API Health Check:', data);
+        } else {
+          console.error('❌ API Health Check falló:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Error en test de conexión:', error);
+      }
+    };
+
+    testApiConnection();
     loadDashboardData();
   }, []);
 
@@ -307,7 +85,10 @@ const Dashboard: React.FC = () => {
       
       // Cargar empresas
       console.log('📋 Cargando empresas...');
+      console.log('🔗 API URL:', 'http://194.164.172.92:3001/api/companies');
+      
       const companiesResponse = await apiService.getCompanies();
+      console.log('📦 Respuesta completa:', companiesResponse);
       
       if (companiesResponse.success) {
         setCompanies(companiesResponse.data);
@@ -318,24 +99,79 @@ const Dashboard: React.FC = () => {
       
     } catch (error) {
       console.error('❌ Error cargando dashboard:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      if (error instanceof Error) {
+        console.error('❌ Error stack:', error.stack);
+      }
+      
+      // MODO DESARROLLO: Simular datos cuando el servidor no está disponible
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.log('🔧 Modo desarrollo: Usando datos simulados');
+        setCompanies([
+          {
+            id: 1,
+            name: 'Axafone Telecom',
+            sector: 'TELECOM',
+            tenant_id: 'axafone-telecom-001',
+            admin_name: 'Juan Pérez',
+            admin_phone: '+34 123 456 789',
+            admin_email: 'admin@axafone.com',
+            created_at: '2025-01-15T10:30:00Z'
+          },
+          {
+            id: 2,
+            name: 'Bufete Legal Madrid',
+            sector: 'LEGAL',
+            tenant_id: 'legal-madrid-002',
+            admin_name: 'María González',
+            admin_phone: '+34 987 654 321',
+            admin_email: 'admin@legalmd.com',
+            created_at: '2025-01-14T09:15:00Z'
+          }
+        ]);
+        console.log('✅ 2 empresas simuladas cargadas');
+      } else {
+        setError(error instanceof Error ? error.message : 'Error desconocido');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Estados para sincronización con Wazuh
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-
-  // Funciones para modal de agregar empresa
+  // Funciones para modal de agregar/editar empresa
   const handleAddCompany = () => {
+    setIsEditMode(false);
+    setEditingCompany(null);
     setCompanyModalOpen(true);
     resetForm();
   };
 
+  const handleEditCompany = async (company: Company) => {
+    setIsEditMode(true);
+    setEditingCompany(company);
+    setCompanyModalOpen(true);
+    
+    // Usar datos disponibles directamente sin hacer petición adicional
+    // ya que el backend no tiene GET /companies/:id
+    setFormData({
+      name: company.name || '',
+      sector: company.sector || '',
+      admin_name: company.admin_name || '',
+      admin_phone: company.admin_phone || '', // Usar el campo si está disponible
+      admin_email: company.admin_email || '',
+      admin_password: '' // Siempre vacío por seguridad
+    });
+    
+    setFormErrors({});
+    setCreateError(null);
+    setShowPassword(false);
+    
+    console.log('✅ Datos cargados para edición:', company);
+  };
+
   const closeCompanyModal = () => {
     setCompanyModalOpen(false);
+    setIsEditMode(false);
+    setEditingCompany(null);
     resetForm();
   };
 
@@ -354,7 +190,10 @@ const Dashboard: React.FC = () => {
   };
 
   const handleInputChange = (field: keyof CreateCompanyData, value: string) => {
-    setFormData((prev: CreateCompanyData) => ({ ...prev, [field]: value }));
+    setFormData((prev: CreateCompanyData) => ({ 
+      ...prev, 
+      [field]: value || '' // Asegurar que nunca sea undefined
+    }));
     
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (formErrors[field as string]) {
@@ -369,24 +208,30 @@ const Dashboard: React.FC = () => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // Validar campos obligatorios
-    if (!formData.name.trim()) errors.name = 'El nombre de la empresa es obligatorio';
-    if (!formData.sector.trim()) errors.sector = 'El sector es obligatorio';
-    if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
-    if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
-    if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    if (!formData.admin_password.trim()) errors.admin_password = 'La contraseña es obligatoria';
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.admin_email && !emailRegex.test(formData.admin_email)) {
-      errors.admin_email = 'El formato del email no es válido';
+    // Solo validar el nombre como obligatorio
+    if (!formData.name || !formData.name.trim()) {
+      errors.name = 'El nombre de la empresa es obligatorio';
     }
 
-    // Validar longitud de contraseña
-    if (formData.admin_password && formData.admin_password.length < 6) {
+    // Validar formato de email solo si se proporciona
+    if (formData.admin_email && formData.admin_email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.admin_email)) {
+        errors.admin_email = 'El formato del email no es válido';
+      }
+    }
+
+    // Validar longitud de contraseña solo si se proporciona
+    if (formData.admin_password && formData.admin_password.trim() && formData.admin_password.length < 6) {
       errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
     }
+
+    // Validar longitudes máximas solo si se proporcionan
+    if (formData.name && formData.name.length > 255) errors.name = 'El nombre no puede exceder 255 caracteres';
+    if (formData.sector && formData.sector.length > 100) errors.sector = 'El sector no puede exceder 100 caracteres';
+    if (formData.admin_name && formData.admin_name.length > 255) errors.admin_name = 'El nombre del administrador no puede exceder 255 caracteres';
+    if (formData.admin_phone && formData.admin_phone.length > 20) errors.admin_phone = 'El teléfono no puede exceder 20 caracteres';
+    if (formData.admin_email && formData.admin_email.length > 255) errors.admin_email = 'El email no puede exceder 255 caracteres';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -403,22 +248,70 @@ const Dashboard: React.FC = () => {
       setIsCreating(true);
       setCreateError(null);
 
-      console.log('➕ Creando empresa:', formData.name);
-      console.log('📋 Datos del formulario:', formData);
-      
-      const response = await apiService.createCompany(formData);
+      // Preparar datos para envío - solo campos que no estén vacíos
+      const submitData: CreateCompanyData = {
+        name: formData.name.trim(),
+        sector: formData.sector.trim() || 'OTHER',
+        admin_name: formData.admin_name.trim() || 'Administrador',
+        admin_phone: formData.admin_phone.trim() || '+34 000 000 000',
+        admin_email: formData.admin_email.trim() || `admin@${formData.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        admin_password: formData.admin_password.trim() || 'password123',
+        // Generar tenant_id solo para nuevas empresas
+        ...(isEditMode ? {} : { tenant_id: generateUUID() })
+      };
 
-      if (response.success) {
-        console.log('✅ Empresa creada exitosamente:', response.data);
+      console.log('📋 Datos a enviar:', submitData);
+      console.log('📋 Datos individuales:', {
+        name: `"${submitData.name}"`,
+        sector: `"${submitData.sector}"`,
+        admin_name: `"${submitData.admin_name}"`,
+        admin_phone: `"${submitData.admin_phone}"`,
+        admin_email: `"${submitData.admin_email}"`,
+        admin_password: `"${submitData.admin_password}"`,
+        tenant_id: `"${submitData.tenant_id || 'NO_TENANT_ID'}"`
+      });
+
+      if (isEditMode && editingCompany) {
+        // Actualizar empresa existente
+        console.log('✏️ Actualizando empresa:', submitData.name);
+        const response = await apiService.updateCompany(editingCompany.id, submitData);
+
+        if (response.success) {
+          console.log('✅ Empresa actualizada exitosamente:', response.data);
+          
+          // Actualizar lista de empresas
+          setCompanies(prev => prev.map(c => 
+            c.id === editingCompany.id ? response.data : c
+          ));
+          
+          // Cerrar modal
+          closeCompanyModal();
+          
+          // Mostrar mensaje de éxito
+          alert(`¡Empresa "${response.data.name}" actualizada exitosamente!`);
+        }
+      } else {
+        // Crear nueva empresa
+        console.log('➕ Creando empresa:', submitData.name);
+        console.log('🔗 URL a llamar:', 'http://194.164.172.92:3001/api/companies');
+        console.log('📦 Método:', 'POST');
+        console.log('📋 Headers:', { 'Content-Type': 'application/json' });
         
-        // Actualizar lista de empresas
-        setCompanies(prev => [...prev, response.data]);
-        
-        // Cerrar modal
-        closeCompanyModal();
-        
-        // Mostrar mensaje de éxito
-        alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
+        const response = await apiService.createCompany(submitData);
+        console.log('📦 Respuesta de crear empresa:', response);
+
+        if (response.success) {
+          console.log('✅ Empresa creada exitosamente:', response.data);
+          
+          // Actualizar lista de empresas
+          setCompanies(prev => [...prev, response.data]);
+          
+          // Cerrar modal
+          closeCompanyModal();
+          
+          // Mostrar mensaje de éxito
+          alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
+        }
       }
     } catch (error) {
       console.error('❌ Error:', error);
@@ -430,13 +323,14 @@ const Dashboard: React.FC = () => {
 
   // Funciones para modal de eliminación
   const handleDeleteCompany = (company: Company) => {
+    console.log('🗑️ Intentando eliminar empresa:', company); // Debug
     setCompanyToDelete(company);
     setDeleteModalOpen(true);
     setDeleteConfirmText("");
   };
 
   const confirmDeleteCompany = async () => {
-    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
+    if (!companyToDelete || deleteConfirmText !== companyToDelete.tenant_id) {
       return;
     }
 
@@ -472,208 +366,6 @@ const Dashboard: React.FC = () => {
     setDeleteConfirmText("");
   };
 
-  // Funciones para modal de agregar/editar empresa
-  const handleAddCompany = () => {
-    setIsEditMode(false);
-    setEditingCompany(null);
-    setCompanyModalOpen(true);
-    resetForm();
-  };
-
-  const handleEditCompany = async (company: Company) => {
-    setIsEditMode(true);
-    setEditingCompany(company);
-    setCompanyModalOpen(true);
-    
-    try {
-      // Cargar datos completos de la empresa desde la API
-      console.log('🔍 Cargando datos completos de la empresa...');
-      const response = await apiService.getCompany(company.id);
-      
-      if (response.success) {
-        const fullCompanyData = response.data;
-        
-        // Precargar TODOS los datos del formulario
-        setFormData({
-          name: fullCompanyData.name,
-          sector: fullCompanyData.sector,
-          admin_name: fullCompanyData.admin_name,
-          admin_phone: fullCompanyData.admin_phone || '', // Cargar teléfono real
-          admin_email: fullCompanyData.admin_email,
-          admin_password: '' // Siempre vacío por seguridad
-        });
-        
-        console.log('✅ Datos completos cargados:', fullCompanyData);
-      } else {
-        throw new Error(response.error || 'Error cargando datos');
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos completos:', error);
-      
-      // Fallback: usar datos básicos disponibles
-      setFormData({
-        name: company.name,
-        sector: company.sector,
-        admin_name: company.admin_name,
-        admin_phone: '', // Campo vacío si no se pudo cargar
-        admin_email: company.admin_email,
-        admin_password: ''
-      });
-      
-      setCreateError('No se pudieron cargar todos los datos. Algunos campos pueden estar vacíos.');
-    }
-    
-    setFormErrors({});
-    setShowPassword(false);
-  };
-
-  const closeCompanyModal = () => {
-    setCompanyModalOpen(false);
-    setIsEditMode(false);
-    setEditingCompany(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      sector: '',
-      admin_name: '',
-      admin_phone: '',
-      admin_email: '',
-      admin_password: ''
-    });
-    setFormErrors({});
-    setCreateError(null);
-    setShowPassword(false);
-  };
-
-  const handleInputChange = (field: keyof CreateCompanyData, value: string) => {
-    setFormData((prev: CreateCompanyData) => ({ ...prev, [field]: value }));
-    
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (formErrors[field as string]) {
-      setFormErrors((prev: Record<string, string>) => {
-        const newErrors = { ...prev };
-        delete newErrors[field as string];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    // Validar campos obligatorios
-    if (!formData.name.trim()) errors.name = 'El nombre de la empresa es obligatorio';
-    if (!formData.sector.trim()) errors.sector = 'El sector es obligatorio';
-    if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
-    if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
-    if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    
-    // Contraseña obligatoria solo para CREAR, opcional para EDITAR
-    if (!isEditMode && !formData.admin_password.trim()) {
-      errors.admin_password = 'La contraseña es obligatoria';
-    }
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.admin_email && !emailRegex.test(formData.admin_email)) {
-      errors.admin_email = 'El formato del email no es válido';
-    }
-
-    // Validar longitud de contraseña (solo si se proporciona)
-    if (formData.admin_password && formData.admin_password.length < 6) {
-      errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    // Validar longitudes máximas
-    if (formData.name.length > 255) errors.name = 'El nombre no puede exceder 255 caracteres';
-    if (formData.sector.length > 100) errors.sector = 'El sector no puede exceder 100 caracteres';
-    if (formData.admin_name.length > 255) errors.admin_name = 'El nombre del administrador no puede exceder 255 caracteres';
-    if (formData.admin_phone.length > 20) errors.admin_phone = 'El teléfono no puede exceder 20 caracteres';
-    if (formData.admin_email.length > 255) errors.admin_email = 'El email no puede exceder 255 caracteres';
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      setCreateError(null);
-
-      if (isEditMode && editingCompany) {
-        // Actualizar empresa existente
-        console.log('✏️ Actualizando empresa:', formData.name);
-        const response = await apiService.updateCompany(editingCompany.id, formData);
-
-        if (response.success) {
-          console.log('✅ Empresa actualizada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => prev.map(c => 
-            c.id === editingCompany.id ? response.data : c
-          ));
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" actualizada exitosamente!`);
-        }
-      } else {
-        // Crear nueva empresa
-        console.log('➕ Creando empresa:', formData.name);
-        const response = await apiService.createCompany(formData);
-
-        if (response.success) {
-          console.log('✅ Empresa creada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => [...prev, response.data]);
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error:', error);
-      setCreateError(error instanceof Error ? error.message : 'Error desconocido');
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const getSectorColor = (sector: string) => {
-    switch (sector) {
-      case 'TELECOM': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'LEGAL': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-      case 'RETAIL': return 'bg-green-500/10 text-green-400 border-green-500/20';
-      case 'TECH': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-      case 'HEALTH': return 'bg-pink-500/10 text-pink-400 border-pink-500/20';
-      case 'FINANCE': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-    }
-  };
-
-  // Función auxiliar para verificar si una empresa tiene wazuh_group
-  const hasWazuhGroup = (company: Company): boolean => {
-    return !!(company as any).wazuh_group;
-  };
-
-  // Función auxiliar para obtener el wazuh_group de una empresa
-  const getWazuhGroup = (company: Company): string | null => {
-    return (company as any).wazuh_group || null;
   // Función para sincronizar con Wazuh (con manejo de errores)
   const handleSyncWithWazuh = async () => {
     try {
@@ -707,6 +399,30 @@ const Dashboard: React.FC = () => {
       setTimeout(() => setSyncMessage(null), 5000);
     }
   };
+
+  const getSectorColor = (sector: string) => {
+    switch (sector) {
+      case 'TELECOM': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'LEGAL': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'RETAIL': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      case 'TECH': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+      case 'HEALTH': return 'bg-pink-500/10 text-pink-400 border-pink-500/20';
+      case 'FINANCE': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+    }
+  };
+
+  // Función auxiliar para verificar si una empresa tiene wazuh_group
+  const hasWazuhGroup = (company: Company): boolean => {
+    return !!(company as any).wazuh_group;
+  };
+
+  // Función auxiliar para obtener el wazuh_group de una empresa
+  const getWazuhGroup = (company: Company): string | null => {
+    return (company as any).wazuh_group || null;
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4 text-slate-300">
@@ -731,16 +447,30 @@ const Dashboard: React.FC = () => {
           
           {/* Botones del Header */}
           <div className="flex items-center space-x-3">
-  };
-
-  if (isLoading) {
-            
             <button
               onClick={handleAddCompany}
               className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>Agregar Empresa</span>
+            </button>
+            
+            <button
+              onClick={handleSyncWithWazuh}
+              disabled={isSyncing}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4" />
+                  <span>Sincronizando...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Sync</span>
+                </>
+              )}
             </button>
             
             <button
@@ -901,7 +631,7 @@ const Dashboard: React.FC = () => {
                   <div key={company.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white">{company.name}</h3>
+                        <h3 className="text-lg font-semibold text-white mb-1">{company.name}</h3>
                         <p className="text-sm text-slate-400">{company.admin_name}</p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -920,12 +650,12 @@ const Dashboard: React.FC = () => {
                     
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="text-slate-400">Email:</span>
-                        <span className="text-slate-300 ml-2">{company.admin_email}</span>
+                        <span className="text-slate-400">Tenant ID:</span>
+                        <span className="text-blue-300 ml-2 font-mono text-xs">{company.tenant_id}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-slate-400">Tenant ID:</span>
-                        <span className="text-slate-300 ml-2 font-mono text-xs">{company.tenant_id}</span>
+                        <span className="text-slate-400">Email:</span>
+                        <span className="text-slate-300 ml-2">{company.admin_email}</span>
                       </div>
                       {hasWazuhGroup(company) && (
                         <div className="text-sm">
@@ -962,7 +692,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Modal de Eliminación */}
-      {deleteModalOpen && (
+      {deleteModalOpen && companyToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
@@ -978,18 +708,28 @@ const Dashboard: React.FC = () => {
               <p className="text-slate-300 mb-2">
                 ¿Estás seguro de que quieres eliminar la empresa?
               </p>
-              <p className="text-white font-semibold mb-4">
-                {companyToDelete?.name}
-              </p>
+              <div className="bg-slate-700 border border-slate-600 rounded-lg p-3 mb-4">
+                <p className="text-white font-semibold text-lg">
+                  {companyToDelete.name}
+                </p>
+                <p className="text-slate-400 text-sm">
+                  ID: {companyToDelete.id} | Tenant: {companyToDelete.tenant_id}
+                </p>
+              </div>
               <p className="text-sm text-slate-400 mb-2">
-                Para confirmar, escribe el nombre exacto de la empresa:
+                Para confirmar, escribe el <strong>Tenant ID</strong> exacto de la empresa:
               </p>
+              <div className="bg-slate-600 border border-slate-500 rounded-lg p-2 mb-2">
+                <p className="text-white font-mono text-sm">
+                  {companyToDelete.tenant_id}
+                </p>
+              </div>
               <input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="Nombre de la empresa"
-                className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                placeholder={`Escribe: ${companyToDelete.tenant_id}`}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
 
@@ -1002,7 +742,7 @@ const Dashboard: React.FC = () => {
               </button>
               <button
                 onClick={confirmDeleteCompany}
-                disabled={deleteConfirmText !== companyToDelete?.name}
+                disabled={deleteConfirmText !== companyToDelete.tenant_id}
                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
               >
                 Eliminar
@@ -1071,7 +811,7 @@ const Dashboard: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value={formData.name}
+                      value={formData.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Ej: Axafone Telecomunicaciones"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -1087,10 +827,10 @@ const Dashboard: React.FC = () => {
                   {/* Sector */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Sector <span className="text-red-400">*</span>
+                      Sector <span className="text-slate-500">(opcional)</span>
                     </label>
                     <select
-                      value={formData.sector}
+                      value={formData.sector || ''}
                       onChange={(e) => handleInputChange('sector', e.target.value)}
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 ${
                         formErrors.sector ? 'border-red-500' : 'border-slate-600'
@@ -1123,11 +863,11 @@ const Dashboard: React.FC = () => {
                   {/* Nombre del administrador */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre completo <span className="text-red-400">*</span>
+                      Nombre completo <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.admin_name}
+                      value={formData.admin_name || ''}
                       onChange={(e) => handleInputChange('admin_name', e.target.value)}
                       placeholder="Ej: Juan Pérez García"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -1143,11 +883,11 @@ const Dashboard: React.FC = () => {
                   {/* Teléfono */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Teléfono <span className="text-red-400">*</span>
+                      Teléfono <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="tel"
-                      value={formData.admin_phone}
+                      value={formData.admin_phone || ''}
                       onChange={(e) => handleInputChange('admin_phone', e.target.value)}
                       placeholder="Ej: +34 123 456 789"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -1163,11 +903,11 @@ const Dashboard: React.FC = () => {
                   {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email <span className="text-red-400">*</span>
+                      Email <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="email"
-                      value={formData.admin_email}
+                      value={formData.admin_email || ''}
                       onChange={(e) => handleInputChange('admin_email', e.target.value)}
                       placeholder="Ej: admin@empresa.com"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -1183,17 +923,17 @@ const Dashboard: React.FC = () => {
                   {/* Contraseña */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Contraseña <span className="text-red-400">*</span>
+                      Contraseña <span className="text-slate-500">(opcional)</span>
                       {isEditMode && (
-                        <span className="text-slate-500 font-normal ml-2">(opcional - dejar vacío para mantener actual)</span>
+                        <span className="text-slate-500 font-normal ml-2">(dejar vacío para mantener actual)</span>
                       )}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        value={formData.admin_password}
+                        value={formData.admin_password || ''}
                         onChange={(e) => handleInputChange('admin_password', e.target.value)}
-                        placeholder={isEditMode ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                        placeholder={isEditMode ? "Nueva contraseña (opcional)" : "Se generará automáticamente"}
                         className={`w-full bg-slate-700 border rounded px-3 py-2 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
                           formErrors.admin_password ? 'border-red-500' : 'border-slate-600'
                         }`}
@@ -1222,14 +962,13 @@ const Dashboard: React.FC = () => {
               <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
                 <h5 className="text-slate-300 font-medium mb-2">Información:</h5>
                 <ul className="text-sm text-slate-400 space-y-1">
-                  <li>• Los campos marcados con <span className="text-red-400">*</span> son obligatorios</li>
+                  <li>• Solo el <span className="text-red-400">nombre de la empresa</span> es obligatorio</li>
+                  <li>• Los demás campos son opcionales y se completarán automáticamente</li>
                   {!isEditMode && (
-                    <li>• Se generará automáticamente un ID único para la empresa</li>
+                    <li>• Se generará automáticamente un Tenant ID único para la empresa</li>
                   )}
-                  {isEditMode && (
-                    <li>• Los cambios se guardarán inmediatamente al confirmar</li>
-                  )}
-                  <li>• El administrador podrá acceder al dashboard con estas credenciales</li>
+                  <li>• Si no se especifica email, se generará uno basado en el nombre</li>
+                  <li>• Si no se especifica contraseña, se usará "password123" por defecto</li>
                 </ul>
               </div>
 
