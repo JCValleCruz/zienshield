@@ -34,6 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/companies', require('./routes/companies'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/stats', require('./routes/stats'));
+app.use("/api/sync", require("./routes/sync"));
 
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
@@ -66,4 +67,6 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔗 Frontend URL configurada: ${process.env.FRONTEND_URL}`);
 });
 
+
+// Agregar ruta de sincronización
 module.exports = app;
