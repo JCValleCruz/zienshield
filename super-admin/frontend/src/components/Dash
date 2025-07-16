@@ -1,247 +1,4 @@
-</div>
-        </div>
-      </div>
-
-      {/* Modal de Agregar Empresa */}
-      {companyModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header del Modal */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-500/10 rounded-lg mr-3">
-                  <Plus className="h-6 w-6 text-green-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white">Agregar Nueva Empresa</h3>
-              </div>
-              <button
-                onClick={closeCompanyModal}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                title="Cerrar sin guardar"
-              >
-                <X className="h-5 w-5 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} className="p-6">
-              {/* Error general */}
-              {createError && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-5 w-5 text-red-400 mr-3" />
-                    <div>
-                      <h4 className="text-red-400 font-medium">Error al crear empresa</h4>
-                      <p className="text-red-300 text-sm mt-1">{createError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Información de la Empresa */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center mb-4">
-                    <Building2 className="h-4 w-4 mr-2 text-blue-400" />
-                    Información de la Empresa
-                  </h4>
-
-                  {/* Nombre de la empresa */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre de la empresa <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Ej: Axafone Telecomunicaciones"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.name ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.name && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.name}</p>
-                    )}
-                  </div>
-
-                  {/* Sector */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Sector <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={formData.sector}
-                      onChange={(e) => handleInputChange('sector', e.target.value)}
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 ${
-                        formErrors.sector ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                    >
-                      <option value="">Seleccionar sector</option>
-                      <option value="TELECOM">Telecomunicaciones</option>
-                      <option value="LEGAL">Legal</option>
-                      <option value="RETAIL">Retail</option>
-                      <option value="TECH">Tecnología</option>
-                      <option value="HEALTH">Salud</option>
-                      <option value="FINANCE">Finanzas</option>
-                      <option value="EDUCATION">Educación</option>
-                      <option value="MANUFACTURING">Manufactura</option>
-                      <option value="OTHER">Otro</option>
-                    </select>
-                    {formErrors.sector && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.sector}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Información del Administrador */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center mb-4">
-                    <Users className="h-4 w-4 mr-2 text-purple-400" />
-                    Administrador
-                  </h4>
-
-                  {/* Nombre del administrador */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre completo <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.admin_name}
-                      onChange={(e) => handleInputChange('admin_name', e.target.value)}
-                      placeholder="Ej: Juan Pérez García"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_name ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.admin_name && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_name}</p>
-                    )}
-                  </div>
-
-                  {/* Teléfono */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Teléfono <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.admin_phone}
-                      onChange={(e) => handleInputChange('admin_phone', e.target.value)}
-                      placeholder="Ej: +34 123 456 789"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_phone ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={20}
-                    />
-                    {formErrors.admin_phone && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_phone}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.admin_email}
-                      onChange={(e) => handleInputChange('admin_email', e.target.value)}
-                      placeholder="Ej: admin@empresa.com"
-                      className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                        formErrors.admin_email ? 'border-red-500' : 'border-slate-600'
-                      }`}
-                      maxLength={255}
-                    />
-                    {formErrors.admin_email && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_email}</p>
-                    )}
-                  </div>
-
-                  {/* Contraseña */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Contraseña <span className="text-red-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.admin_password}
-                        onChange={(e) => handleInputChange('admin_password', e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        className={`w-full bg-slate-700 border rounded px-3 py-2 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
-                          formErrors.admin_password ? 'border-red-500' : 'border-slate-600'
-                        }`}
-                        maxLength={255}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {formErrors.admin_password && (
-                      <p className="text-red-400 text-sm mt-1">{formErrors.admin_password}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Información adicional */}
-              <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-                <h5 className="text-slate-300 font-medium mb-2">Información:</h5>
-                <ul className="text-sm text-slate-400 space-y-1">
-                  <li>• Los campos marcados con <span className="text-red-400">*</span> son obligatorios</li>
-                  <li>• Se generará automáticamente un ID único para la empresa</li>
-                  <li>• El administrador podrá acceder al dashboard con estas credenciales</li>
-                </ul>
-              </div>
-
-              {/* Botones */}
-              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-700">
-                <button
-                  type="button"
-                  onClick={closeCompanyModal}
-                  disabled={isCreating}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 text-white rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader className="animate-spin h-4 w-4" />
-                      <span>Creando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      <span>Crear Empresa</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit, RefreshCw } from 'lucide-react';
 import { apiService, Company, CreateCompanyData } from '../services/api';
 import SystemMetricsGrid from './SystemMetricsGrid';
@@ -251,24 +8,9 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Estados para modal de agregar empresa
-  const [companyModalOpen, setCompanyModalOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Estado del formulario
-  const [formData, setFormData] = useState<CreateCompanyData>({
-    name: '',
-    sector: '',
-    admin_name: '',
-    admin_phone: '',
-    admin_email: '',
-    admin_password: ''
-  });
-
-  // Errores de validación
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  // Estados para sincronización con Wazuh
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   // Estados para modal de eliminación
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -324,107 +66,37 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Estados para sincronización con Wazuh
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-
-  // Funciones para modal de agregar empresa
-  const handleAddCompany = () => {
-    setCompanyModalOpen(true);
-    resetForm();
-  };
-
-  const closeCompanyModal = () => {
-    setCompanyModalOpen(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      sector: '',
-      admin_name: '',
-      admin_phone: '',
-      admin_email: '',
-      admin_password: ''
-    });
-    setFormErrors({});
-    setCreateError(null);
-    setShowPassword(false);
-  };
-
-  const handleInputChange = (field: keyof CreateCompanyData, value: string) => {
-    setFormData((prev: CreateCompanyData) => ({ ...prev, [field]: value }));
-    
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (formErrors[field as string]) {
-      setFormErrors((prev: Record<string, string>) => {
-        const newErrors = { ...prev };
-        delete newErrors[field as string];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    // Validar campos obligatorios
-    if (!formData.name.trim()) errors.name = 'El nombre de la empresa es obligatorio';
-    if (!formData.sector.trim()) errors.sector = 'El sector es obligatorio';
-    if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
-    if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
-    if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    if (!formData.admin_password.trim()) errors.admin_password = 'La contraseña es obligatoria';
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.admin_email && !emailRegex.test(formData.admin_email)) {
-      errors.admin_email = 'El formato del email no es válido';
-    }
-
-    // Validar longitud de contraseña
-    if (formData.admin_password && formData.admin_password.length < 6) {
-      errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+  // Función para sincronizar con Wazuh (con manejo de errores)
+  const handleSyncWithWazuh = async () => {
     try {
-      setIsCreating(true);
-      setCreateError(null);
-
-      console.log('➕ Creando empresa:', formData.name);
-      console.log('📋 Datos del formulario:', formData);
+      setIsSyncing(true);
+      setSyncMessage(null);
       
-      const response = await apiService.createCompany(formData);
-
-      if (response.success) {
-        console.log('✅ Empresa creada exitosamente:', response.data);
+      console.log('🔄 Iniciando sincronización con Wazuh...');
+      
+      // Verificar si el método existe antes de llamarlo
+      if (typeof apiService.syncCompaniesWithWazuh === 'function') {
+        const response = await apiService.syncCompaniesWithWazuh();
         
-        // Actualizar lista de empresas
-        setCompanies(prev => [...prev, response.data]);
-        
-        // Cerrar modal
-        closeCompanyModal();
-        
-        // Mostrar mensaje de éxito
-        alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
+        if (response.success) {
+          setSyncMessage('✅ Sincronización completada exitosamente');
+          // Recargar datos después de la sincronización
+          await loadDashboardData();
+        } else {
+          setSyncMessage('❌ Error en la sincronización: ' + (response.error || 'Error desconocido'));
+        }
+      } else {
+        setSyncMessage('⚠️ Función de sincronización no disponible');
+        console.warn('syncCompaniesWithWazuh no está disponible en apiService');
       }
+      
     } catch (error) {
-      console.error('❌ Error:', error);
-      setCreateError(error instanceof Error ? error.message : 'Error desconocido');
+      console.error('❌ Error en sincronización:', error);
+      setSyncMessage('❌ Error de conexión durante la sincronización');
     } finally {
-      setIsCreating(false);
+      setIsSyncing(false);
+      // Limpiar mensaje después de 5 segundos
+      setTimeout(() => setSyncMessage(null), 5000);
     }
   };
 
@@ -674,39 +346,9 @@ const Dashboard: React.FC = () => {
   // Función auxiliar para obtener el wazuh_group de una empresa
   const getWazuhGroup = (company: Company): string | null => {
     return (company as any).wazuh_group || null;
-  // Función para sincronizar con Wazuh (con manejo de errores)
-  const handleSyncWithWazuh = async () => {
-    try {
-      setIsSyncing(true);
-      setSyncMessage(null);
-      
-      console.log('🔄 Iniciando sincronización con Wazuh...');
-      
-      // Verificar si el método existe antes de llamarlo
-      if (typeof apiService.syncCompaniesWithWazuh === 'function') {
-        const response = await apiService.syncCompaniesWithWazuh();
-        
-        if (response.success) {
-          setSyncMessage('✅ Sincronización completada exitosamente');
-          // Recargar datos después de la sincronización
-          await loadDashboardData();
-        } else {
-          setSyncMessage('❌ Error en la sincronización: ' + (response.error || 'Error desconocido'));
-        }
-      } else {
-        setSyncMessage('⚠️ Función de sincronización no disponible');
-        console.warn('syncCompaniesWithWazuh no está disponible en apiService');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error en sincronización:', error);
-      setSyncMessage('❌ Error de conexión durante la sincronización');
-    } finally {
-      setIsSyncing(false);
-      // Limpiar mensaje después de 5 segundos
-      setTimeout(() => setSyncMessage(null), 5000);
-    }
   };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4 text-slate-300">
@@ -731,9 +373,14 @@ const Dashboard: React.FC = () => {
           
           {/* Botones del Header */}
           <div className="flex items-center space-x-3">
-  };
-
-  if (isLoading) {
+            <button
+              onClick={handleSyncWithWazuh}
+              disabled={isSyncing}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Wazuh'}</span>
+            </button>
             
             <button
               onClick={handleAddCompany}

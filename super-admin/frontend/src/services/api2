@@ -15,7 +15,6 @@ export interface Company {
   admin_phone: string; // ← AGREGADO: Campo admin_phone
   admin_email: string;
   created_at: string;
-  wazuh_group?: string; // ← AGREGADO: Campo wazuh_group
 }
 
 export interface CreateCompanyData {
@@ -34,21 +33,6 @@ export interface ApiResponse<T> {
   timestamp: string;
   error?: string;
   details?: string[];
-}
-
-// Interfaces adicionales para Wazuh
-export interface WazuhGroup {
-  id: string;
-  name: string;
-  description?: string;
-  agents_count?: number;
-}
-
-export interface SyncResponse {
-  synced_companies: number;
-  failed_companies: string[];
-  total_companies: number;
-  timestamp: string;
 }
 
 class ApiService {
@@ -105,37 +89,18 @@ class ApiService {
       method: 'DELETE',
     });
   }
+}
+
+export const apiService = new ApiService();
 
   // Método para sincronizar empresas con Wazuh
-  async syncCompaniesWithWazuh(): Promise<ApiResponse<SyncResponse>> {
+  async syncCompaniesWithWazuh(): Promise<ApiResponse<any>> {
     return this.fetchApi('/sync/companies-to-wazuh', {
       method: 'POST',
     });
   }
 
   // Método para obtener grupos de Wazuh
-  async getWazuhGroups(): Promise<ApiResponse<WazuhGroup[]>> {
+  async getWazuhGroups(): Promise<ApiResponse<any>> {
     return this.fetchApi('/sync/wazuh-groups');
   }
-
-  // Método para obtener estadísticas de sincronización
-  async getSyncStats(): Promise<ApiResponse<any>> {
-    return this.fetchApi('/sync/stats');
-  }
-
-  // Método para sincronizar una empresa específica
-  async syncCompanyWithWazuh(companyId: number): Promise<ApiResponse<any>> {
-    return this.fetchApi(`/sync/companies/${companyId}/wazuh`, {
-      method: 'POST',
-    });
-  }
-
-  // Método para desincronizar una empresa de Wazuh
-  async unsyncCompanyFromWazuh(companyId: number): Promise<ApiResponse<any>> {
-    return this.fetchApi(`/sync/companies/${companyId}/wazuh`, {
-      method: 'DELETE',
-    });
-  }
-}
-
-export const apiService = new ApiService();

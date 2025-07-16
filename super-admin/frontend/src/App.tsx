@@ -19,7 +19,7 @@ function App() {
     setUser(null);
   };
 
-  // Si no hay usuario, mostrar login (por ahora solo dashboard)
+  // Si no hay usuario, mostrar login
   if (!user) {
     return (
       <div className="App">
@@ -33,7 +33,7 @@ function App() {
     );
   }
 
-  // Si hay usuario, mostrar dashboard (SIN botón de logout)
+  // Si hay usuario, mostrar dashboard
   return (
     <div className="App">
       <Dashboard />
