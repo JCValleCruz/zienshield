@@ -74,6 +74,7 @@ const getGlobalStats = async (req, res) => {
     let wazuhStatus = { status: 'disconnected', version: 'unknown', last_check: new Date().toISOString() };
     let agentStats = { total: 0, active: 0, inactive: 0, pending: 0 };
     let vulnerabilityStats = { total: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    let eventStats = { perSecond: 0, total: 0, totalAlerts: 0, hour: 0 }; // NUEVO: Estadísticas de eventos reales
     
     try {
       console.log('🔍 Conectando con Wazuh API...');
@@ -87,6 +88,30 @@ const getGlobalStats = async (req, res) => {
           last_check: new Date().toISOString()
         };
         console.log('✅ Conexión con Wazuh exitosa');
+      }
+
+      // NUEVO: Obtener estadísticas de eventos del manager
+      console.log('📊 Obteniendo estadísticas de eventos...');
+      const managerStats = await wazuhApiCall('/manager/stats');
+      
+      if (managerStats && managerStats.data && managerStats.data.affected_items && managerStats.data.affected_items.length > 0) {
+        const statsData = managerStats.data.affected_items[0];
+        
+        // Calcular eventos por segundo (eventos de la última hora / 3600 segundos)
+        const eventsPerSecond = statsData.events ? Math.round((statsData.events / 3600) * 100) / 100 : 0;
+        
+        eventStats = {
+          perSecond: eventsPerSecond,
+          total: statsData.events || 0,
+          totalAlerts: statsData.totalAlerts || 0,
+          hour: statsData.hour || 0
+        };
+        
+        console.log(`📊 Eventos procesados: ${statsData.events} en la hora ${statsData.hour}`);
+        console.log(`⚡ Eventos por segundo: ${eventsPerSecond}`);
+        console.log(`🚨 Alertas generadas: ${statsData.totalAlerts}`);
+      } else {
+        console.warn('⚠️ No se pudieron obtener estadísticas de eventos del manager');
       }
 
       // Obtener lista de agentes
@@ -145,7 +170,7 @@ const getGlobalStats = async (req, res) => {
     // Ejecutar consulta de empresas
     const companiesResult = await pool.query(companiesQuery);
 
-    // Estadísticas simuladas para alertas
+    // Estadísticas simuladas para alertas (basadas en agentes activos)
     const alertStats = {
       total: agentStats.active * 15,
       critical: Math.floor(agentStats.active * 0.5),
@@ -170,6 +195,7 @@ const getGlobalStats = async (req, res) => {
         average: compliance
       },
       vulnerabilities: vulnerabilityStats,
+      events: eventStats, // NUEVO: Incluir estadísticas reales de eventos
       wazuh: wazuhStatus,
       timestamp: new Date().toISOString()
     };

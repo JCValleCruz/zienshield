@@ -53,7 +53,7 @@ export interface SyncResponse {
   timestamp: string;
 }
 
-// ACTUALIZADA: Interfaces para estadísticas globales con eventos reales de Wazuh
+// ACTUALIZADA: Interfaces para estadísticas globales con vulnerabilidades
 export interface GlobalStats {
   companies: {
     total: number;
@@ -75,18 +75,12 @@ export interface GlobalStats {
   compliance: {
     average: number;
   };
-  vulnerabilities: {
+  vulnerabilities: {  // NUEVO: Vulnerabilidades reales de Wazuh
     total: number;
     critical: number;
     high: number;
     medium: number;
     low: number;
-  };
-  events: {  // NUEVO: Eventos reales de Wazuh
-    perSecond: number;
-    total: number;
-    totalAlerts: number;
-    hour: number;
   };
   wazuh: {
     status: string;
@@ -151,13 +145,8 @@ class ApiService {
     });
   }
 
-  // Método para obtener estadísticas globales (incluye eventos reales de Wazuh)
+  // Método para obtener estadísticas globales (incluye agentes y vulnerabilidades de Wazuh)
   async getGlobalStats(): Promise<ApiResponse<GlobalStats>> {
-    return this.fetchApi('/stats');
-  }
-
-  // NUEVO: Método específico para obtener métricas del sistema (para useSystemMetrics)
-  async getSystemMetrics(): Promise<ApiResponse<GlobalStats>> {
     return this.fetchApi('/stats');
   }
 

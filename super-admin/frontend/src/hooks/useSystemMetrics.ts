@@ -40,21 +40,74 @@ interface SystemMetricsResponse {
   error?: string;
 }
 
+// Interface para los datos de eventos reales desde /api/stats
+interface GlobalStatsResponse {
+  success: boolean;
+  data: {
+    events: {
+      perSecond: number;
+      total: number;
+      totalAlerts: number;
+      hour: number;
+    };
+    wazuh: {
+      status: string;
+      version: string;
+      last_check: string;
+    };
+    timestamp: string;
+  };
+  error?: string;
+}
+
 export const useSystemMetrics = () => {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
+  // Función para obtener eventos reales desde el backend
+  const fetchRealEventsData = async (): Promise<{ perSecond: number; total: number } | null> => {
+    try {
+      console.log('📊 Obteniendo eventos reales desde /api/stats...');
+      
+      const response = await fetch('http://194.164.172.92:3001/api/stats');
+      
+      if (!response.ok) {
+        throw new Error(`Error en API: ${response.status}`);
+      }
+
+      const result: GlobalStatsResponse = await response.json();
+      
+      if (result.success && result.data.events) {
+        console.log('✅ Eventos reales obtenidos:', {
+          perSecond: result.data.events.perSecond,
+          total: result.data.events.total,
+          totalAlerts: result.data.events.totalAlerts
+        });
+        
+        return {
+          perSecond: result.data.events.perSecond || 0,
+          total: result.data.events.total || 0
+        };
+      }
+      
+      throw new Error('Datos de eventos no encontrados en la respuesta');
+      
+    } catch (error) {
+      console.warn('⚠️ No se pudieron obtener eventos reales, usando simulados:', error);
+      return null;
+    }
+  };
+
   const fetchMetrics = useCallback(async () => {
     try {
       setError(null);
       
-      // TODO: Implementar llamada real a la API cuando esté disponible
-      // const response = await fetch('http://194.164.172.92:3001/api/system/metrics');
-      // const data = await response.json();
+      // Obtener eventos reales del backend
+      const realEvents = await fetchRealEventsData();
       
-      // Por ahora simulamos datos realistas
+      // Generar métricas simuladas para el resto del sistema
       const mockData: SystemMetrics = {
         cpu: {
           usage: Math.floor(Math.random() * 40) + 20, // 20-60%
@@ -80,8 +133,8 @@ export const useSystemMetrics = () => {
           tx: Math.floor(Math.random() * 500) + 200,
           speed: '1Gbps'
         },
-        events: {
-          perSecond: Math.floor(Math.random() * 50) + 10,
+        events: realEvents || {
+          perSecond: Math.floor(Math.random() * 50) + 10, // Fallback simulado
           total: Math.floor(Math.random() * 100000) + 50000
         },
         uptime: 86400 * 15, // 15 días
@@ -102,7 +155,14 @@ export const useSystemMetrics = () => {
 
       setMetrics(mockData);
       setLastUpdate(new Date());
-      console.log('✅ Métricas del sistema actualizadas:', mockData);
+      
+      console.log('✅ Métricas del sistema actualizadas:', {
+        eventsPerSecond: mockData.events.perSecond,
+        eventsTotal: mockData.events.total,
+        eventsSource: realEvents ? 'Real (Wazuh)' : 'Simulado',
+        cpu: mockData.cpu.usage,
+        memory: mockData.memory.usage
+      });
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -116,10 +176,10 @@ export const useSystemMetrics = () => {
   useEffect(() => {
     // Cargar métricas iniciales
     fetchMetrics();
-
+    
     // Actualizar cada 30 segundos
     const interval = setInterval(fetchMetrics, 30000);
-
+    
     return () => clearInterval(interval);
   }, [fetchMetrics]);
 
