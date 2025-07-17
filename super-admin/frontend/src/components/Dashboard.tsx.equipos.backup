@@ -1,20 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit, RefreshCw, LogOut } from 'lucide-react';
+import { Shield, Monitor, AlertTriangle, Building2, Users, Loader, Trash2, Plus, X, Eye, EyeOff, Edit, RefreshCw } from 'lucide-react';
 import { apiService, Company, CreateCompanyData, GlobalStats } from '../services/api';
 import SystemMetricsGrid from './SystemMetricsGrid';
 
-interface User {
-  id: string;
-  email: string;
-  role: string;
-}
-
-interface DashboardProps {
-  user?: User;
-  onLogout?: () => void;
-}
-
-const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+const Dashboard: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         agents: { total: 0, active: 0, inactive: 0, pending: 0 },
         alerts: { total: 0, critical: 0, high: 0, medium: 0, low: 0 },
         compliance: { average: 85 },
-        vulnerabilities: { total: 0, critical: 0, high: 0, medium: 0, low: 0 },
+        threats: { blocked: 0 },
         wazuh: { status: 'disconnected', version: 'unknown', last_check: new Date().toISOString() },
         timestamp: new Date().toISOString()
       });
@@ -500,15 +489,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       <div className="bg-slate-800 border-b border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center">
-                <Shield className="h-8 w-8 mr-3 text-blue-500" />
-                ZienSHIELD
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                Super Admin Panel - {user?.email || 'admin@zienshield.com'}
-              </p>
-            </div>
+            <h1 className="text-2xl font-bold text-white flex items-center">
+              <Shield className="h-8 w-8 mr-3 text-blue-500" />
+              ZienSHIELD
+            </h1>
           </div>
           
           {/* Botones del Header */}
@@ -546,16 +530,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               <Monitor className="h-4 w-4" />
               <span>Actualizar</span>
             </button>
-            
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Cerrar Sesión</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -675,7 +649,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             </div>
           </div>
 
-          {/* Vulnerabilidades */}
+          {/* Alertas Totales */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-red-500/10 rounded-lg">
@@ -687,23 +661,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-1">
-                {globalStats?.vulnerabilities?.total || 0}
+                {globalStats?.threats.blocked || 0}
               </div>
               <div className="text-sm text-slate-400">
-                Vulnerabilidades
+                Amenazas Bloqueadas
               </div>
-              {globalStats && globalStats.vulnerabilities && globalStats.vulnerabilities.critical > 0 && (
-                <div className="text-xs text-red-400 mt-1">
-                  {globalStats.vulnerabilities.critical} críticas
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         {/* Lista de Empresas */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg">
-         <div className="px-6 py-4 border-b border-slate-700">
+          <div className="px-6 py-4 border-b border-slate-700">
             <h2 className="text-xl font-semibold text-white flex items-center">
               <Building2 className="h-5 w-5 mr-2 text-blue-400" />
               Empresas Registradas ({companies.length})

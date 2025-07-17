@@ -4,8 +4,8 @@ const axios = require('axios');
 class WazuhSyncService {
   constructor() {
     this.baseURL = 'https://localhost:55000';
-    this.username = 'admin';
-    this.password = '+uo.tUSlH1OPsPYc2eZHdo0L+t.G4RIC';
+    this.username = 'wazuh';
+    this.password = "wazuh";
     this.token = null;
     this.tokenExpiry = null;
   }
@@ -72,6 +72,8 @@ class WazuhSyncService {
       throw error;
     }
   }
+
+  // ========== MÉTODOS EXISTENTES ==========
 
   // Obtener grupos existentes en Wazuh
   async getExistingGroups() {
@@ -184,6 +186,118 @@ class WazuhSyncService {
         error: error.message,
         status: 'disconnected'
       };
+    }
+  }
+
+  // ========== NUEVOS MÉTODOS PARA AGENTES Y ALERTAS ==========
+
+  // Obtener todos los agentes
+  async getAllAgents() {
+    try {
+      console.log('📊 Obteniendo lista de agentes desde Wazuh...');
+      
+      const response = await this.authenticatedRequest('GET', '/agents');
+      const agents = response.data?.affected_items || [];
+      
+      console.log(`✅ ${agents.length} agentes encontrados en Wazuh`);
+      return agents;
+    } catch (error) {
+      console.error('❌ Error obteniendo agentes de Wazuh:', error);
+      return [];
+    }
+  }
+
+  // Obtener resumen de agentes
+  async getAgentsSummary() {
+    try {
+      const agents = await this.getAllAgents();
+      
+      const summary = {
+        total: agents.length,
+        active: agents.filter(agent => agent.status === 'active').length,
+        disconnected: agents.filter(agent => agent.status === 'disconnected').length,
+        pending: agents.filter(agent => agent.status === 'pending').length,
+        never_connected: agents.filter(agent => agent.status === 'never_connected').length
+      };
+
+      console.log('📊 Resumen de agentes:', summary);
+      return summary;
+    } catch (error) {
+      console.error('❌ Error obteniendo resumen de agentes:', error);
+      return {
+        total: 0,
+        active: 0,
+        disconnected: 0,
+        pending: 0,
+        never_connected: 0
+      };
+    }
+  }
+
+  // Obtener alertas recientes (último mes)
+  async getRecentAlerts() {
+    try {
+      console.log('🚨 Obteniendo alertas recientes desde Wazuh...');
+      
+      // Calcular fecha de hace 30 días
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateFrom = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      // Consultar alertas con filtro de fecha
+      const response = await this.authenticatedRequest('GET', `/alerts?date_from=${dateFrom}&limit=10000`);
+      const alerts = response.data?.affected_items || [];
+      
+      // Categorizar alertas por nivel de severidad
+      const alertsSummary = {
+        total: alerts.length,
+        critical: alerts.filter(alert => alert.rule?.level >= 12).length,
+        high: alerts.filter(alert => alert.rule?.level >= 8 && alert.rule?.level < 12).length,
+        medium: alerts.filter(alert => alert.rule?.level >= 4 && alert.rule?.level < 8).length,
+        low: alerts.filter(alert => alert.rule?.level < 4).length
+      };
+
+      console.log('🚨 Resumen de alertas (30 días):', alertsSummary);
+      return alertsSummary;
+    } catch (error) {
+      console.error('❌ Error obteniendo alertas de Wazuh:', error);
+      return {
+        total: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      };
+    }
+  }
+
+  // Obtener estadísticas completas para el dashboard
+  async getDashboardStats() {
+    try {
+      console.log('📊 Obteniendo estadísticas completas del dashboard...');
+      
+      // Ejecutar todas las consultas en paralelo
+      const [agentsSummary, alertsSummary, groups] = await Promise.all([
+        this.getAgentsSummary(),
+        this.getRecentAlerts(),
+        this.getExistingGroups()
+      ]);
+
+      const stats = {
+        agents: agentsSummary,
+        alerts: alertsSummary,
+        groups: {
+          total: groups.length,
+          list: groups.map(group => group.name)
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('✅ Estadísticas del dashboard obtenidas exitosamente');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error obteniendo estadísticas del dashboard:', error);
+      throw error;
     }
   }
 }

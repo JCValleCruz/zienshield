@@ -53,6 +53,43 @@ export interface SyncResponse {
   timestamp: string;
 }
 
+// ACTUALIZADA: Interfaces para estadísticas globales con vulnerabilidades
+export interface GlobalStats {
+  companies: {
+    total: number;
+    synced: number;
+  };
+  agents: {
+    total: number;
+    active: number;
+    inactive: number;
+    pending: number;
+  };
+  alerts: {
+    total: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  compliance: {
+    average: number;
+  };
+  vulnerabilities: {  // NUEVO: Vulnerabilidades reales de Wazuh
+    total: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  wazuh: {
+    status: string;
+    version: string;
+    last_check: string;
+  };
+  timestamp: string;
+}
+
 class ApiService {
   private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
@@ -106,6 +143,11 @@ class ApiService {
     return this.fetchApi(`/companies/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Método para obtener estadísticas globales (incluye agentes y vulnerabilidades de Wazuh)
+  async getGlobalStats(): Promise<ApiResponse<GlobalStats>> {
+    return this.fetchApi('/stats');
   }
 
   // Método para sincronizar empresas con Wazuh

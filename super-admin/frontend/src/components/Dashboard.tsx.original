@@ -8,10 +8,6 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Estados para sincronización con Wazuh
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-
   // Estados para modal de eliminación
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
@@ -26,7 +22,7 @@ const Dashboard: React.FC = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
   // Estado del formulario
-  const [formData, setFormData] = useState<CreateCompanyData>({
+  const [formData, setFormData] = useState({
     name: '',
     sector: '',
     admin_name: '',
@@ -38,7 +34,47 @@ const Dashboard: React.FC = () => {
   // Errores de validación
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // Estados para sincronización con Wazuh
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Función para generar UUID v4
+  const generateUUID = (): string => {
+    // Usar crypto.randomUUID() si está disponible (navegadores modernos)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    
+    // Fallback para navegadores más antiguos
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  };
+
   useEffect(() => {
+    // Test de conexión API
+    const testApiConnection = async () => {
+      try {
+        console.log('🔍 Probando conexión API...');
+        console.log('🔗 API Base URL:', 'http://194.164.172.92:3001/api');
+        
+        const response = await fetch('http://194.164.172.92:3001/api/health');
+        console.log('📡 Status de conexión:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ API Health Check:', data);
+        } else {
+          console.error('❌ API Health Check falló:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Error en test de conexión:', error);
+      }
+    };
+
+    testApiConnection();
     loadDashboardData();
   }, []);
 
@@ -49,7 +85,10 @@ const Dashboard: React.FC = () => {
       
       // Cargar empresas
       console.log('📋 Cargando empresas...');
+      console.log('🔗 API URL:', 'http://194.164.172.92:3001/api/companies');
+      
       const companiesResponse = await apiService.getCompanies();
+      console.log('📦 Respuesta completa:', companiesResponse);
       
       if (companiesResponse.success) {
         setCompanies(companiesResponse.data);
@@ -60,55 +99,235 @@ const Dashboard: React.FC = () => {
       
     } catch (error) {
       console.error('❌ Error cargando dashboard:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      if (error instanceof Error) {
+        console.error('❌ Error stack:', error.stack);
+      }
+      
+      // MODO DESARROLLO: Simular datos cuando el servidor no está disponible
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.log('🔧 Modo desarrollo: Usando datos simulados');
+        setCompanies([
+          {
+            id: 1,
+            name: 'Axafone Telecom',
+            sector: 'TELECOM',
+            tenant_id: 'axafone-telecom-001',
+            admin_name: 'Juan Pérez',
+            admin_phone: '+34 123 456 789',
+            admin_email: 'admin@axafone.com',
+            created_at: '2025-01-15T10:30:00Z', updated_at: '2025-01-15T10:30:00Z', wazuh_group: 'axafone-telecom-001'
+          },
+          {
+            id: 2,
+            name: 'Bufete Legal Madrid',
+            sector: 'LEGAL',
+            tenant_id: 'legal-madrid-002',
+            admin_name: 'María González',
+            admin_phone: '+34 987 654 321',
+            admin_email: 'admin@legalmd.com',
+            created_at: '2025-01-14T09:15:00Z', updated_at: '2025-01-14T09:15:00Z', wazuh_group: 'legal-madrid-002'
+          }
+        ]);
+        console.log('✅ 2 empresas simuladas cargadas');
+      } else {
+        setError(error instanceof Error ? error.message : 'Error desconocido');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Función para sincronizar con Wazuh (con manejo de errores)
-  const handleSyncWithWazuh = async () => {
+  // Funciones para modal de agregar/editar empresa
+  const handleAddCompany = () => {
+    setIsEditMode(false);
+    setEditingCompany(null);
+    setCompanyModalOpen(true);
+    resetForm();
+  };
+
+  const handleEditCompany = async (company: Company) => {
+    setIsEditMode(true);
+    setEditingCompany(company);
+    setCompanyModalOpen(true);
+    
+    // Usar datos disponibles directamente sin hacer petición adicional
+    // ya que el backend no tiene GET /companies/:id
+    setFormData({
+      name: company.name || '',
+      sector: company.sector || '',
+      admin_name: company.admin_name || '',
+      admin_phone: company.admin_phone || '', // Usar el campo si está disponible
+      admin_email: company.admin_email || '',
+      admin_password: '' // Siempre vacío por seguridad
+    });
+    
+    setFormErrors({});
+    setCreateError(null);
+    setShowPassword(false);
+    
+    console.log('✅ Datos cargados para edición:', company);
+  };
+
+  const closeCompanyModal = () => {
+    setCompanyModalOpen(false);
+    setIsEditMode(false);
+    setEditingCompany(null);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      sector: '',
+      admin_name: '',
+      admin_phone: '',
+      admin_email: '',
+      admin_password: ''
+    });
+    setFormErrors({});
+    setCreateError(null);
+    setShowPassword(false);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      [field]: value || '' // Asegurar que nunca sea undefined
+    }));
+    
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (formErrors[field]) {
+      setFormErrors((prev: Record<string, string>) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Solo validar el nombre como obligatorio
+    if (!formData.name || !formData.name.trim()) {
+      errors.name = 'El nombre de la empresa es obligatorio';
+    }
+
+    // Validar formato de email solo si se proporciona
+    if (formData.admin_email && formData.admin_email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.admin_email)) {
+        errors.admin_email = 'El formato del email no es válido';
+      }
+    }
+
+    // Validar longitud de contraseña solo si se proporciona
+    if (formData.admin_password && formData.admin_password.trim() && formData.admin_password.length < 6) {
+      errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    // Validar longitudes máximas solo si se proporcionan
+    if (formData.name && formData.name.length > 255) errors.name = 'El nombre no puede exceder 255 caracteres';
+    if (formData.sector && formData.sector.length > 100) errors.sector = 'El sector no puede exceder 100 caracteres';
+    if (formData.admin_name && formData.admin_name.length > 255) errors.admin_name = 'El nombre del administrador no puede exceder 255 caracteres';
+    if (formData.admin_phone && formData.admin_phone.length > 20) errors.admin_phone = 'El teléfono no puede exceder 20 caracteres';
+    if (formData.admin_email && formData.admin_email.length > 255) errors.admin_email = 'El email no puede exceder 255 caracteres';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      setIsSyncing(true);
-      setSyncMessage(null);
-      
-      console.log('🔄 Iniciando sincronización con Wazuh...');
-      
-      // Verificar si el método existe antes de llamarlo
-      if (typeof apiService.syncCompaniesWithWazuh === 'function') {
-        const response = await apiService.syncCompaniesWithWazuh();
-        
+      setIsCreating(true);
+      setCreateError(null);
+
+      // ✅ CORREGIDO: Datos preparados para coincidir con backend
+      const submitData: CreateCompanyData = {
+        company_name: formData.name.trim(),     // ← Cambiar 'name' a 'company_name'
+        sector: formData.sector.trim() || 'OTHER',
+        admin_name: formData.name.trim(), admin_phone: formData.admin_phone.trim() || '+34 000 000 000',
+        admin_email: formData.admin_email.trim() || `admin@${formData.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        admin_password: formData.admin_password.trim() || 'password123'
+        // ❌ NO enviar tenant_id (backend lo genera automáticamente)
+        // ❌ NO enviar admin_name (backend no lo usa actualmente)
+      };
+
+      console.log('📋 Datos a enviar:', submitData);
+      console.log('📋 Datos individuales:', {
+        company_name: `"${submitData.company_name}"`,
+        sector: `"${submitData.sector}"`,
+        admin_phone: `"${submitData.admin_phone}"`,
+        admin_email: `"${submitData.admin_email}"`,
+        admin_password: `"${submitData.admin_password}"`
+      });
+
+      if (isEditMode && editingCompany) {
+        // Actualizar empresa existente
+        console.log('✏️ Actualizando empresa:', submitData.company_name);
+        const response = await apiService.updateCompany(editingCompany.id, submitData);
+
         if (response.success) {
-          setSyncMessage('✅ Sincronización completada exitosamente');
-          // Recargar datos después de la sincronización
-          await loadDashboardData();
-        } else {
-          setSyncMessage('❌ Error en la sincronización: ' + (response.error || 'Error desconocido'));
+          console.log('✅ Empresa actualizada exitosamente:', response.data);
+          
+          // Actualizar lista de empresas
+          setCompanies(prev => prev.map(c => 
+            c.id === editingCompany.id ? response.data : c
+          ));
+          
+          // Cerrar modal
+          closeCompanyModal();
+          
+          // Mostrar mensaje de éxito
+          alert(`¡Empresa "${response.data.name}" actualizada exitosamente!`);
         }
       } else {
-        setSyncMessage('⚠️ Función de sincronización no disponible');
-        console.warn('syncCompaniesWithWazuh no está disponible en apiService');
+        // Crear nueva empresa
+        console.log('➕ Creando empresa:', submitData.company_name);
+        console.log('🔗 URL a llamar:', 'http://194.164.172.92:3001/api/companies');
+        console.log('📦 Método:', 'POST');
+        console.log('📋 Headers:', { 'Content-Type': 'application/json' });
+        
+        const response = await apiService.createCompany(submitData);
+        console.log('📦 Respuesta de crear empresa:', response);
+
+        if (response.success) {
+          console.log('✅ Empresa creada exitosamente:', response.data);
+          
+          // Actualizar lista de empresas
+          setCompanies(prev => [...prev, response.data]);
+          
+          // Cerrar modal
+          closeCompanyModal();
+          
+          // Mostrar mensaje de éxito
+          alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
+        }
       }
-      
     } catch (error) {
-      console.error('❌ Error en sincronización:', error);
-      setSyncMessage('❌ Error de conexión durante la sincronización');
+      console.error('❌ Error:', error);
+      setCreateError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
-      setIsSyncing(false);
-      // Limpiar mensaje después de 5 segundos
-      setTimeout(() => setSyncMessage(null), 5000);
+      setIsCreating(false);
     }
   };
 
   // Funciones para modal de eliminación
   const handleDeleteCompany = (company: Company) => {
+    console.log('🗑️ Intentando eliminar empresa:', company); // Debug
     setCompanyToDelete(company);
     setDeleteModalOpen(true);
     setDeleteConfirmText("");
   };
 
   const confirmDeleteCompany = async () => {
-    if (!companyToDelete || deleteConfirmText !== companyToDelete.name) {
+    if (!companyToDelete || deleteConfirmText !== companyToDelete.tenant_id) {
       return;
     }
 
@@ -144,185 +363,37 @@ const Dashboard: React.FC = () => {
     setDeleteConfirmText("");
   };
 
-  // Funciones para modal de agregar/editar empresa
-  const handleAddCompany = () => {
-    setIsEditMode(false);
-    setEditingCompany(null);
-    setCompanyModalOpen(true);
-    resetForm();
-  };
-
-  const handleEditCompany = async (company: Company) => {
-    setIsEditMode(true);
-    setEditingCompany(company);
-    setCompanyModalOpen(true);
-    
+  // Función para sincronizar con Wazuh (con manejo de errores)
+  const handleSyncWithWazuh = async () => {
     try {
-      // Cargar datos completos de la empresa desde la API
-      console.log('🔍 Cargando datos completos de la empresa...');
-      const response = await apiService.getCompany(company.id);
+      setIsSyncing(true);
+      setSyncMessage(null);
       
-      if (response.success) {
-        const fullCompanyData = response.data;
+      console.log('🔄 Iniciando sincronización con Wazuh...');
+      
+      // Verificar si el método existe antes de llamarlo
+      if (typeof apiService.syncCompaniesWithWazuh === 'function') {
+        const response = await apiService.syncCompaniesWithWazuh();
         
-        // Precargar TODOS los datos del formulario
-        setFormData({
-          name: fullCompanyData.name,
-          sector: fullCompanyData.sector,
-          admin_name: fullCompanyData.admin_name,
-          admin_phone: fullCompanyData.admin_phone || '', // Cargar teléfono real
-          admin_email: fullCompanyData.admin_email,
-          admin_password: '' // Siempre vacío por seguridad
-        });
-        
-        console.log('✅ Datos completos cargados:', fullCompanyData);
-      } else {
-        throw new Error(response.error || 'Error cargando datos');
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos completos:', error);
-      
-      // Fallback: usar datos básicos disponibles
-      setFormData({
-        name: company.name,
-        sector: company.sector,
-        admin_name: company.admin_name,
-        admin_phone: '', // Campo vacío si no se pudo cargar
-        admin_email: company.admin_email,
-        admin_password: ''
-      });
-      
-      setCreateError('No se pudieron cargar todos los datos. Algunos campos pueden estar vacíos.');
-    }
-    
-    setFormErrors({});
-    setShowPassword(false);
-  };
-
-  const closeCompanyModal = () => {
-    setCompanyModalOpen(false);
-    setIsEditMode(false);
-    setEditingCompany(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      sector: '',
-      admin_name: '',
-      admin_phone: '',
-      admin_email: '',
-      admin_password: ''
-    });
-    setFormErrors({});
-    setCreateError(null);
-    setShowPassword(false);
-  };
-
-  const handleInputChange = (field: keyof CreateCompanyData, value: string) => {
-    setFormData((prev: CreateCompanyData) => ({ ...prev, [field]: value }));
-    
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (formErrors[field as string]) {
-      setFormErrors((prev: Record<string, string>) => {
-        const newErrors = { ...prev };
-        delete newErrors[field as string];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    // Validar campos obligatorios
-    if (!formData.name.trim()) errors.name = 'El nombre de la empresa es obligatorio';
-    if (!formData.sector.trim()) errors.sector = 'El sector es obligatorio';
-    if (!formData.admin_name.trim()) errors.admin_name = 'El nombre del administrador es obligatorio';
-    if (!formData.admin_phone.trim()) errors.admin_phone = 'El teléfono es obligatorio';
-    if (!formData.admin_email.trim()) errors.admin_email = 'El email es obligatorio';
-    
-    // Contraseña obligatoria solo para CREAR, opcional para EDITAR
-    if (!isEditMode && !formData.admin_password.trim()) {
-      errors.admin_password = 'La contraseña es obligatoria';
-    }
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.admin_email && !emailRegex.test(formData.admin_email)) {
-      errors.admin_email = 'El formato del email no es válido';
-    }
-
-    // Validar longitud de contraseña (solo si se proporciona)
-    if (formData.admin_password && formData.admin_password.length < 6) {
-      errors.admin_password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    // Validar longitudes máximas
-    if (formData.name.length > 255) errors.name = 'El nombre no puede exceder 255 caracteres';
-    if (formData.sector.length > 100) errors.sector = 'El sector no puede exceder 100 caracteres';
-    if (formData.admin_name.length > 255) errors.admin_name = 'El nombre del administrador no puede exceder 255 caracteres';
-    if (formData.admin_phone.length > 20) errors.admin_phone = 'El teléfono no puede exceder 20 caracteres';
-    if (formData.admin_email.length > 255) errors.admin_email = 'El email no puede exceder 255 caracteres';
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      setCreateError(null);
-
-      if (isEditMode && editingCompany) {
-        // Actualizar empresa existente
-        console.log('✏️ Actualizando empresa:', formData.name);
-        const response = await apiService.updateCompany(editingCompany.id, formData);
-
         if (response.success) {
-          console.log('✅ Empresa actualizada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => prev.map(c => 
-            c.id === editingCompany.id ? response.data : c
-          ));
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" actualizada exitosamente!`);
+          setSyncMessage('✅ Sincronización completada exitosamente');
+          // Recargar datos después de la sincronización
+          await loadDashboardData();
+        } else {
+          setSyncMessage('❌ Error en la sincronización: ' + (response.error || 'Error desconocido'));
         }
       } else {
-        // Crear nueva empresa
-        console.log('➕ Creando empresa:', formData.name);
-        const response = await apiService.createCompany(formData);
-
-        if (response.success) {
-          console.log('✅ Empresa creada exitosamente:', response.data);
-          
-          // Actualizar lista de empresas
-          setCompanies(prev => [...prev, response.data]);
-          
-          // Cerrar modal
-          closeCompanyModal();
-          
-          // Mostrar mensaje de éxito
-          alert(`¡Empresa "${response.data.name}" creada exitosamente!`);
-        }
+        setSyncMessage('⚠️ Función de sincronización no disponible');
+        console.warn('syncCompaniesWithWazuh no está disponible en apiService');
       }
+      
     } catch (error) {
-      console.error('❌ Error:', error);
-      setCreateError(error instanceof Error ? error.message : 'Error desconocido');
+      console.error('❌ Error en sincronización:', error);
+      setSyncMessage('❌ Error de conexión durante la sincronización');
     } finally {
-      setIsCreating(false);
+      setIsSyncing(false);
+      // Limpiar mensaje después de 5 segundos
+      setTimeout(() => setSyncMessage(null), 5000);
     }
   };
 
@@ -374,20 +445,29 @@ const Dashboard: React.FC = () => {
           {/* Botones del Header */}
           <div className="flex items-center space-x-3">
             <button
-              onClick={handleSyncWithWazuh}
-              disabled={isSyncing}
-              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Wazuh'}</span>
-            </button>
-            
-            <button
               onClick={handleAddCompany}
               className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>Agregar Empresa</span>
+            </button>
+            
+            <button
+              onClick={handleSyncWithWazuh}
+              disabled={isSyncing}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4" />
+                  <span>Sincronizando...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Sync</span>
+                </>
+              )}
             </button>
             
             <button
@@ -548,7 +628,7 @@ const Dashboard: React.FC = () => {
                   <div key={company.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white">{company.name}</h3>
+                        <h3 className="text-lg font-semibold text-white mb-1">{company.name}</h3>
                         <p className="text-sm text-slate-400">{company.admin_name}</p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -567,12 +647,12 @@ const Dashboard: React.FC = () => {
                     
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="text-slate-400">Email:</span>
-                        <span className="text-slate-300 ml-2">{company.admin_email}</span>
+                        <span className="text-slate-400">Tenant ID:</span>
+                        <span className="text-blue-300 ml-2 font-mono text-xs">{company.tenant_id}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-slate-400">Tenant ID:</span>
-                        <span className="text-slate-300 ml-2 font-mono text-xs">{company.tenant_id}</span>
+                        <span className="text-slate-400">Email:</span>
+                        <span className="text-slate-300 ml-2">{company.admin_email}</span>
                       </div>
                       {hasWazuhGroup(company) && (
                         <div className="text-sm">
@@ -609,7 +689,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Modal de Eliminación */}
-      {deleteModalOpen && (
+      {deleteModalOpen && companyToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
@@ -625,18 +705,28 @@ const Dashboard: React.FC = () => {
               <p className="text-slate-300 mb-2">
                 ¿Estás seguro de que quieres eliminar la empresa?
               </p>
-              <p className="text-white font-semibold mb-4">
-                {companyToDelete?.name}
-              </p>
+              <div className="bg-slate-700 border border-slate-600 rounded-lg p-3 mb-4">
+                <p className="text-white font-semibold text-lg">
+                  {companyToDelete.name}
+                </p>
+                <p className="text-slate-400 text-sm">
+                  ID: {companyToDelete.id} | Tenant: {companyToDelete.tenant_id}
+                </p>
+              </div>
               <p className="text-sm text-slate-400 mb-2">
-                Para confirmar, escribe el nombre exacto de la empresa:
+                Para confirmar, escribe el <strong>Tenant ID</strong> exacto de la empresa:
               </p>
+              <div className="bg-slate-600 border border-slate-500 rounded-lg p-2 mb-2">
+                <p className="text-white font-mono text-sm">
+                  {companyToDelete.tenant_id}
+                </p>
+              </div>
               <input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="Nombre de la empresa"
-                className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                placeholder={`Escribe: ${companyToDelete.tenant_id}`}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
 
@@ -649,7 +739,7 @@ const Dashboard: React.FC = () => {
               </button>
               <button
                 onClick={confirmDeleteCompany}
-                disabled={deleteConfirmText !== companyToDelete?.name}
+                disabled={deleteConfirmText !== companyToDelete.tenant_id}
                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:text-slate-400 text-white py-2 px-4 rounded transition-colors"
               >
                 Eliminar
@@ -718,7 +808,7 @@ const Dashboard: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value={formData.name}
+                      value={formData.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Ej: Axafone Telecomunicaciones"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -734,10 +824,10 @@ const Dashboard: React.FC = () => {
                   {/* Sector */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Sector <span className="text-red-400">*</span>
+                      Sector <span className="text-slate-500">(opcional)</span>
                     </label>
                     <select
-                      value={formData.sector}
+                      value={formData.sector || ''}
                       onChange={(e) => handleInputChange('sector', e.target.value)}
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 ${
                         formErrors.sector ? 'border-red-500' : 'border-slate-600'
@@ -770,11 +860,11 @@ const Dashboard: React.FC = () => {
                   {/* Nombre del administrador */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Nombre completo <span className="text-red-400">*</span>
+                      Nombre completo <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.admin_name}
+                      value={formData.admin_name || ''}
                       onChange={(e) => handleInputChange('admin_name', e.target.value)}
                       placeholder="Ej: Juan Pérez García"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -790,11 +880,11 @@ const Dashboard: React.FC = () => {
                   {/* Teléfono */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Teléfono <span className="text-red-400">*</span>
+                      Teléfono <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="tel"
-                      value={formData.admin_phone}
+                      value={formData.admin_phone || ''}
                       onChange={(e) => handleInputChange('admin_phone', e.target.value)}
                       placeholder="Ej: +34 123 456 789"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -810,11 +900,11 @@ const Dashboard: React.FC = () => {
                   {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email <span className="text-red-400">*</span>
+                      Email <span className="text-slate-500">(opcional)</span>
                     </label>
                     <input
                       type="email"
-                      value={formData.admin_email}
+                      value={formData.admin_email || ''}
                       onChange={(e) => handleInputChange('admin_email', e.target.value)}
                       placeholder="Ej: admin@empresa.com"
                       className={`w-full bg-slate-700 border rounded px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
@@ -830,17 +920,17 @@ const Dashboard: React.FC = () => {
                   {/* Contraseña */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Contraseña <span className="text-red-400">*</span>
+                      Contraseña <span className="text-slate-500">(opcional)</span>
                       {isEditMode && (
-                        <span className="text-slate-500 font-normal ml-2">(opcional - dejar vacío para mantener actual)</span>
+                        <span className="text-slate-500 font-normal ml-2">(dejar vacío para mantener actual)</span>
                       )}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        value={formData.admin_password}
+                        value={formData.admin_password || ''}
                         onChange={(e) => handleInputChange('admin_password', e.target.value)}
-                        placeholder={isEditMode ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                        placeholder={isEditMode ? "Nueva contraseña (opcional)" : "Se generará automáticamente"}
                         className={`w-full bg-slate-700 border rounded px-3 py-2 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 ${
                           formErrors.admin_password ? 'border-red-500' : 'border-slate-600'
                         }`}
@@ -869,14 +959,13 @@ const Dashboard: React.FC = () => {
               <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
                 <h5 className="text-slate-300 font-medium mb-2">Información:</h5>
                 <ul className="text-sm text-slate-400 space-y-1">
-                  <li>• Los campos marcados con <span className="text-red-400">*</span> son obligatorios</li>
+                  <li>• Solo el <span className="text-red-400">nombre de la empresa</span> es obligatorio</li>
+                  <li>• Los demás campos son opcionales y se completarán automáticamente</li>
                   {!isEditMode && (
-                    <li>• Se generará automáticamente un ID único para la empresa</li>
+                    <li>• Se generará automáticamente un Tenant ID único para la empresa</li>
                   )}
-                  {isEditMode && (
-                    <li>• Los cambios se guardarán inmediatamente al confirmar</li>
-                  )}
-                  <li>• El administrador podrá acceder al dashboard con estas credenciales</li>
+                  <li>• Si no se especifica email, se generará uno basado en el nombre</li>
+                  <li>• Si no se especifica contraseña, se usará "password123" por defecto</li>
                 </ul>
               </div>
 

@@ -18,14 +18,15 @@ export interface Company {
   wazuh_group?: string;
 }
 
+// ✅ CORREGIDO: Interfaz actualizada para coincidir con el backend
 export interface CreateCompanyData {
-  name: string;
+  company_name: string;    // ← Cambiar 'name' a 'company_name'
   sector: string;
-  admin_name: string;
   admin_phone: string;
   admin_email: string;
   admin_password: string;
-  tenant_id?: string; // ← AGREGADO: Campo tenant_id opcional
+  // ❌ NO incluir tenant_id (backend lo genera automáticamente)
+  // ❌ NO incluir admin_name (backend no lo usa actualmente)
 }
 
 export interface ApiResponse<T> {

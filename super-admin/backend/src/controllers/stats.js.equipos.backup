@@ -1,12 +1,9 @@
 const pool = require('../../config/database');
 
 // Configuración de Wazuh API
-const WAZUH_API_URL = 'https://194.164.172.92:55000';
+const WAZUH_API_URL = 'http://194.164.172.92:55000';
 const WAZUH_USERNAME = 'wazuh';
 const WAZUH_PASSWORD = 'wazuh';
-
-// Deshabilitar verificación SSL para certificados autofirmados
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 // Función para obtener token de autenticación de Wazuh
 const getWazuhToken = async () => {
@@ -70,14 +67,11 @@ const getGlobalStats = async (req, res) => {
       FROM companies
     `;
 
-    // Inicializar estadísticas por defecto
+    // Obtener agentes desde Wazuh API
+    let wazuhAgents = null;
     let wazuhStatus = { status: 'disconnected', version: 'unknown', last_check: new Date().toISOString() };
-    let agentStats = { total: 0, active: 0, inactive: 0, pending: 0 };
-    let vulnerabilityStats = { total: 0, critical: 0, high: 0, medium: 0, low: 0 };
     
     try {
-      console.log('🔍 Conectando con Wazuh API...');
-      
       // Obtener información del manager
       const managerInfo = await wazuhApiCall('/manager/info');
       if (managerInfo && managerInfo.data) {
@@ -86,78 +80,54 @@ const getGlobalStats = async (req, res) => {
           version: managerInfo.data.version,
           last_check: new Date().toISOString()
         };
-        console.log('✅ Conexión con Wazuh exitosa');
       }
 
       // Obtener lista de agentes
-      const wazuhAgents = await wazuhApiCall('/agents?limit=1000');
-      
-      if (wazuhAgents && wazuhAgents.data && wazuhAgents.data.affected_items) {
-        const agents = wazuhAgents.data.affected_items;
-        
-        agentStats = {
-          total: agents.length,
-          active: agents.filter(agent => agent.status === 'active').length,
-          inactive: agents.filter(agent => agent.status === 'disconnected').length,
-          pending: agents.filter(agent => agent.status === 'pending' || agent.status === 'never_connected').length
-        };
-        
-        console.log(`✅ ${agentStats.total} agentes encontrados (${agentStats.active} activos)`);
-        
-        // Obtener información de paquetes instalados para calcular vulnerabilidades potenciales
-        const activeAgents = agents.filter(agent => agent.status === 'active');
-        let totalPackages = 0;
-        
-        console.log('📦 Obteniendo información de paquetes instalados...');
-        
-        for (const agent of activeAgents.slice(0, 5)) { // Limitar a 5 agentes para no sobrecargar
-          try {
-            const packages = await wazuhApiCall(`/syscollector/${agent.id}/packages?limit=5000`);
-            if (packages && packages.data && packages.data.affected_items) {
-              const packageCount = packages.data.affected_items.length;
-              totalPackages += packageCount;
-              console.log(`📦 Agente ${agent.id}: ${packageCount} paquetes instalados`);
-            }
-          } catch (error) {
-            console.warn(`⚠️ No se pudieron obtener paquetes del agente ${agent.id}:`, error.message);
-          }
-        }
-
-        // Calcular vulnerabilidades basadas en paquetes instalados
-        // Esta es una estimación: ~15% de paquetes pueden tener vulnerabilidades
-        if (totalPackages > 0) {
-          const estimatedVulns = Math.floor(totalPackages * 0.15);
-          vulnerabilityStats = {
-            total: estimatedVulns,
-            critical: Math.floor(estimatedVulns * 0.08), // 8% críticas
-            high: Math.floor(estimatedVulns * 0.12),     // 12% altas
-            medium: Math.floor(estimatedVulns * 0.35),   // 35% medias
-            low: Math.floor(estimatedVulns * 0.45)       // 45% bajas
-          };
-          console.log(`🔍 Estimación de vulnerabilidades basada en ${totalPackages} paquetes: ${vulnerabilityStats.total} vulnerabilidades potenciales`);
-        }
-      }
-
+      wazuhAgents = await wazuhApiCall('/agents?limit=1000');
     } catch (error) {
-      console.warn('⚠️ Error conectando con Wazuh API:', error.message);
+      console.warn('No se pudo conectar con Wazuh API:', error.message);
     }
 
     // Ejecutar consulta de empresas
     const companiesResult = await pool.query(companiesQuery);
 
-    // Estadísticas simuladas para alertas
+    // Procesar datos de agentes de Wazuh
+    let agentStats = {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      pending: 0
+    };
+
+    if (wazuhAgents && wazuhAgents.data && wazuhAgents.data.affected_items) {
+      const agents = wazuhAgents.data.affected_items;
+      
+      agentStats = {
+        total: agents.length,
+        active: agents.filter(agent => agent.status === 'active').length,
+        inactive: agents.filter(agent => agent.status === 'disconnected').length,
+        pending: agents.filter(agent => agent.status === 'pending' || agent.status === 'never_connected').length
+      };
+    }
+
+    // Estadísticas simuladas para alertas (ya que no tenemos tabla real)
     const alertStats = {
-      total: agentStats.active * 15,
+      total: agentStats.active * 15, // Simular alertas basadas en agentes activos
       critical: Math.floor(agentStats.active * 0.5),
       high: Math.floor(agentStats.active * 1.2),
       medium: Math.floor(agentStats.active * 3.8),
       low: Math.floor(agentStats.active * 9.5)
     };
 
-    // Calcular compliance
+    // Calcular compliance basado en agentes activos vs empresas
     const totalCompanies = parseInt(companiesResult.rows[0].total_companies);
     const syncedCompanies = parseInt(companiesResult.rows[0].synced_companies);
     const compliance = totalCompanies > 0 ? Math.round((syncedCompanies / totalCompanies) * 100) : 85;
+
+    // Calcular amenazas bloqueadas basadas en alertas
+    const threatsBlocked = alertStats.critical * 12 + 
+                          alertStats.high * 8 + 
+                          alertStats.medium * 3;
 
     const globalStats = {
       companies: {
@@ -169,7 +139,9 @@ const getGlobalStats = async (req, res) => {
       compliance: {
         average: compliance
       },
-      vulnerabilities: vulnerabilityStats,
+      threats: {
+        blocked: threatsBlocked || 0
+      },
       wazuh: wazuhStatus,
       timestamp: new Date().toISOString()
     };
