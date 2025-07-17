@@ -1,3 +1,139 @@
+#!/bin/bash
+
+# Script para añadir métricas reales del servidor al widget "Sistema"
+# Ejecutar desde: /home/gacel/zienshield
+# Uso: ./fix-server-metrics.sh
+
+set -e  # Parar si hay algún error
+
+echo "🔧 Configurando métricas reales del servidor para el widget Sistema..."
+
+# Verificar que estamos en el directorio correcto
+if [ ! -d "super-admin" ]; then
+    echo "❌ Error: Ejecuta este script desde /home/gacel/zienshield"
+    exit 1
+fi
+
+# 1. CREAR CONTROLADOR BACKEND
+echo "📝 Creando controlador de métricas del servidor..."
+mkdir -p super-admin/backend/src/controllers
+
+cat > super-admin/backend/src/controllers/server-metrics.js << 'EOF'
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const fs = require('fs').promises;
+
+const execAsync = promisify(exec);
+
+// Obtener métricas reales del servidor
+const getServerMetrics = async (req, res) => {
+  try {
+    console.log('📊 Obteniendo métricas reales del servidor...');
+
+    // Leer uptime del sistema
+    const uptimeData = await fs.readFile('/proc/uptime', 'utf8');
+    const uptimeSeconds = Math.floor(parseFloat(uptimeData.split(' ')[0]));
+
+    // Leer load average del sistema
+    const loadData = await fs.readFile('/proc/loadavg', 'utf8');
+    const loadValues = loadData.split(' ').slice(0, 3).map(parseFloat);
+
+    // Obtener número de cores CPU
+    const { stdout: coresOutput } = await execAsync('nproc');
+    const cpuCores = parseInt(coresOutput.trim());
+
+    // Formatear uptime a días, horas, minutos
+    const formatUptime = (seconds) => {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      
+      if (days > 0) {
+        return `${days}d ${hours}h`;
+      } else if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      } else {
+        return `${minutes}m`;
+      }
+    };
+
+    const serverMetrics = {
+      uptime: {
+        seconds: uptimeSeconds,
+        formatted: formatUptime(uptimeSeconds)
+      },
+      loadAverage: loadValues,
+      cpuCores: cpuCores,
+      status: 'online',
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('✅ Métricas del servidor obtenidas:', {
+      uptime: serverMetrics.uptime.formatted,
+      loadAverage: serverMetrics.loadAverage[0],
+      cores: serverMetrics.cpuCores
+    });
+
+    res.json({
+      success: true,
+      data: serverMetrics
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo métricas del servidor:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo métricas del servidor',
+      details: error.message
+    });
+  }
+};
+
+module.exports = {
+  getServerMetrics
+};
+EOF
+
+echo "✅ Controlador server-metrics.js creado"
+
+# 2. CREAR RUTA BACKEND
+echo "📝 Creando ruta para métricas del servidor..."
+mkdir -p super-admin/backend/src/routes
+
+cat > super-admin/backend/src/routes/server-metrics.js << 'EOF'
+const express = require('express');
+const router = express.Router();
+const { getServerMetrics } = require('../controllers/server-metrics');
+
+// GET /api/system/server-metrics - Obtener métricas reales del servidor
+router.get('/', getServerMetrics);
+
+module.exports = router;
+EOF
+
+echo "✅ Ruta server-metrics.js creada"
+
+# 3. ACTUALIZAR APP.JS PARA AÑADIR LA NUEVA RUTA
+echo "📝 Actualizando app.js para incluir nueva ruta..."
+
+# Buscar si ya existe la ruta
+if ! grep -q "server-metrics" super-admin/backend/src/app.js; then
+    # Añadir la nueva ruta antes de la línea de export
+    sed -i '/module\.exports = app;/i\
+// Rutas de métricas del servidor\
+app.use('"'"'/api/system/server-metrics'"'"', require('"'"'./routes/server-metrics'"'"'));' super-admin/backend/src/app.js
+    echo "✅ Ruta añadida a app.js"
+else
+    echo "⚠️  Ruta ya existe en app.js"
+fi
+
+# 4. ACTUALIZAR useSystemMetrics.ts
+echo "📝 Actualizando useSystemMetrics.ts para usar datos reales del servidor..."
+
+# Crear backup
+cp super-admin/frontend/src/hooks/useSystemMetrics.ts super-admin/frontend/src/hooks/useSystemMetrics.ts.backup.$(date +%Y%m%d_%H%M%S)
+
+cat > super-admin/frontend/src/hooks/useSystemMetrics.ts << 'EOF'
 import { useState, useEffect, useCallback } from 'react';
 
 export interface SystemMetrics {
@@ -246,3 +382,50 @@ export const useSystemMetrics = () => {
     refresh: fetchMetrics
   };
 };
+EOF
+
+echo "✅ useSystemMetrics.ts actualizado con datos reales del servidor"
+
+# 5. VERIFICAR QUE APP.JS EXISTE
+if [ ! -f "super-admin/backend/src/app.js" ]; then
+    echo "⚠️  Archivo app.js no encontrado, creando estructura básica..."
+    cat > super-admin/backend/src/app.js << 'EOF'
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Rutas existentes
+app.use('/api/companies', require('./routes/companies'));
+app.use('/api/stats', require('./routes/stats'));
+
+// Rutas de métricas del servidor
+app.use('/api/system/server-metrics', require('./routes/server-metrics'));
+
+module.exports = app;
+EOF
+    echo "✅ app.js creado con estructura básica"
+fi
+
+echo ""
+echo "🎉 ¡Configuración completada!"
+echo ""
+echo "📋 Resumen de cambios:"
+echo "  ✅ Controlador server-metrics.js creado"
+echo "  ✅ Ruta /api/system/server-metrics añadida"
+echo "  ✅ app.js actualizado"
+echo "  ✅ useSystemMetrics.ts actualizado con datos reales"
+echo ""
+echo "🚀 Próximos pasos:"
+echo "  1. Reiniciar el backend: pm2 restart zienshield-backend"
+echo "  2. Probar el endpoint: curl http://194.164.172.92:3001/api/system/server-metrics"
+echo "  3. El frontend se actualizará automáticamente cada 30 segundos"
+echo ""
+echo "📊 El widget 'Sistema' ahora mostrará:"
+echo "  - Uptime real del servidor"
+echo "  - Load Average real"
+echo "  - Número de cores real"
+echo "  - Eventos de Wazuh en tiempo real"

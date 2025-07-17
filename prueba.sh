@@ -1,3 +1,8 @@
+# Crear backup del archivo actual
+cp super-admin/frontend/src/hooks/useSystemMetrics.ts super-admin/frontend/src/hooks/useSystemMetrics.ts.backup.manual
+
+# Reemplazar completamente el archivo
+sudo tee super-admin/frontend/src/hooks/useSystemMetrics.ts > /dev/null << 'EOF'
 import { useState, useEffect, useCallback } from 'react';
 
 export interface SystemMetrics {
@@ -246,3 +251,10 @@ export const useSystemMetrics = () => {
     refresh: fetchMetrics
   };
 };
+EOF
+
+# Verificar que se actualizó
+ls -la super-admin/frontend/src/hooks/useSystemMetrics.ts
+
+# Reiniciar frontend
+pm2 restart zienshield-frontend

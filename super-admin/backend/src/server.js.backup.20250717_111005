@@ -34,7 +34,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/companies', require('./routes/companies'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/stats', require('./routes/stats'));
-app.use('/api/system/server-metrics', require('./routes/server-metrics'));
 app.use('/api/sync', require('./routes/sync'));
 
 // Endpoint de salud
