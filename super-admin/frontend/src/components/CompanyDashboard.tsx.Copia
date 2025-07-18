@@ -80,7 +80,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
   const currentSector = getSectorConfig(user.sector || 'DEFAULT');
 
-  // Datos simulados que se integrarán con Wazuh API - ACTUALIZADO con vulnerabilidades por dispositivo
+  // Datos simulados que se integrarán con Wazuh API
   const [dashboardData, setDashboardData] = useState({
     securityStatus: 'good', // good, warning, critical
     threatsBlocked: 23,
@@ -100,79 +100,12 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       low: 39
     },
     devices: [
-      { 
-        name: 'SERVIDOR-PRINCIPAL', 
-        ip: '192.168.1.100', 
-        os: 'Ubuntu 22.04 LTS',
-        vulnerabilities: { critical: 3, high: 12, medium: 28, low: 15 }
-      },
-      { 
-        name: 'PC-ADMINISTRACION', 
-        ip: '192.168.1.101', 
-        os: 'Windows 11 Pro',
-        vulnerabilities: { critical: 0, high: 5, medium: 18, low: 8 }
-      },
-      { 
-        name: 'PC-VENTAS', 
-        ip: '192.168.1.102', 
-        os: 'Windows 10 Pro',
-        vulnerabilities: { critical: 2, high: 8, medium: 22, low: 12 }
-      },
-      { 
-        name: 'PC-SOPORTE', 
-        ip: '192.168.1.103', 
-        os: 'Windows 10 Pro',
-        vulnerabilities: { critical: 1, high: 3, medium: 15, low: 4 }
-      }
+      { name: 'SERVIDOR-PRINCIPAL', ip: '192.168.1.100', os: 'Ubuntu 22.04 LTS' },
+      { name: 'PC-ADMINISTRACION', ip: '192.168.1.101', os: 'Windows 11 Pro' },
+      { name: 'PC-VENTAS', ip: '192.168.1.102', os: 'Windows 10 Pro' },
+      { name: 'PC-SOPORTE', ip: '192.168.1.103', os: 'Windows 10 Pro' }
     ]
   });
-
-  // Componente para mostrar vulnerabilidades de un dispositivo
-  const DeviceVulnerabilities = ({ vulnerabilities }: { vulnerabilities: any }) => {
-    return (
-      <div className="flex items-center space-x-2 mt-2">
-        {/* Críticas */}
-        {vulnerabilities.critical > 0 && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span className="text-xs text-red-400 font-medium">{vulnerabilities.critical}</span>
-          </div>
-        )}
-        
-        {/* Altas */}
-        {vulnerabilities.high > 0 && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-            <span className="text-xs text-orange-400 font-medium">{vulnerabilities.high}</span>
-          </div>
-        )}
-        
-        {/* Medias */}
-        {vulnerabilities.medium > 0 && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span className="text-xs text-blue-400 font-medium">{vulnerabilities.medium}</span>
-          </div>
-        )}
-        
-        {/* Bajas */}
-        {vulnerabilities.low > 0 && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs text-green-400 font-medium">{vulnerabilities.low}</span>
-          </div>
-        )}
-        
-        {/* Si no hay vulnerabilidades */}
-        {vulnerabilities.critical === 0 && vulnerabilities.high === 0 && vulnerabilities.medium === 0 && vulnerabilities.low === 0 && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs text-green-400 font-medium">Seguro</span>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // Simular carga de datos
   useEffect(() => {
@@ -342,30 +275,18 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
             </div>
           </div>
 
-          {/* Últimos Dispositivos Conectados - ACTUALIZADO */}
+          {/* Últimos Dispositivos Conectados */}
           <div className="grid grid-cols-4 gap-6 mb-8">
             {dashboardData.devices.map((device, index) => (
               <div key={index} className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                   <Monitor className="w-8 h-8 text-blue-400" />
-                  {/* Indicador de estado del dispositivo */}
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-400">Online</span>
-                  </div>
                 </div>
-                
-                {/* Nombre del dispositivo más pequeño */}
-                <div className="text-lg font-bold text-white mb-2">
+                <div className="text-xl font-bold text-white mb-2">
                   {device.name}
                 </div>
-                
-                {/* Información del dispositivo */}
                 <div className="text-gray-300 text-sm mb-1">IP: {device.ip}</div>
-                <div className="text-gray-300 text-sm mb-3">{device.os}</div>
-                
-                {/* Vulnerabilidades del dispositivo */}
-                <DeviceVulnerabilities vulnerabilities={device.vulnerabilities} />
+                <div className="text-gray-300 text-sm">{device.os}</div>
               </div>
             ))}
           </div>
