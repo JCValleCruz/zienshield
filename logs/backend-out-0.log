@@ -1,0 +1,117 @@
+2025-07-18 14:39 +00:00: 🚀 ZienSHIELD API iniciando...
+2025-07-18 14:39 +00:00: 📡 Servidor corriendo en puerto 3001
+2025-07-18 14:39 +00:00: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18 14:39 +00:00: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18 14:39 +00:00: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18 14:39 +00:00: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18 14:39 +00:00: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18 14:39 +00:00: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18 14:39 +00:00: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18 14:39 +00:00: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18 14:39 +00:00: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18 14:39 +00:00: 
+2025-07-18 14:39 +00:00: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:39:25.425Z
+2025-07-18T14:39:41: 🚀 ZienSHIELD API iniciando...
+2025-07-18T14:39:41: 📡 Servidor corriendo en puerto 3001
+2025-07-18T14:39:41: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18T14:39:41: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18T14:39:41: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18T14:39:41: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18T14:39:41: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18T14:39:41: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18T14:39:41: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18T14:39:41: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18T14:39:41: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18T14:39:41: 
+2025-07-18T14:39:41: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:39:41.496Z
+2025-07-18 14:43 +00:00: 🚀 ZienSHIELD API iniciando...
+2025-07-18 14:43 +00:00: 📡 Servidor corriendo en puerto 3001
+2025-07-18 14:43 +00:00: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18 14:43 +00:00: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18 14:43 +00:00: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18 14:43 +00:00: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18 14:43 +00:00: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18 14:43 +00:00: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18 14:43 +00:00: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18 14:43 +00:00: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18 14:43 +00:00: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18 14:43 +00:00: 
+2025-07-18 14:43 +00:00: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:43:10.965Z
+2025-07-18T14:43:46: 🚀 ZienSHIELD API iniciando...
+2025-07-18T14:43:46: 📡 Servidor corriendo en puerto 3001
+2025-07-18T14:43:46: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18T14:43:46: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18T14:43:46: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18T14:43:46: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18T14:43:46: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18T14:43:46: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18T14:43:46: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18T14:43:46: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18T14:43:46: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18T14:43:46: 
+2025-07-18T14:43:46: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:43:46.480Z
+2025-07-18 14:44 +00:00: 🚀 ZienSHIELD API iniciando...
+2025-07-18 14:44 +00:00: 📡 Servidor corriendo en puerto 3001
+2025-07-18 14:44 +00:00: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18 14:44 +00:00: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18 14:44 +00:00: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18 14:44 +00:00: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18 14:44 +00:00: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18 14:44 +00:00: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18 14:44 +00:00: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18 14:44 +00:00: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18 14:44 +00:00: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18 14:44 +00:00: 
+2025-07-18 14:44 +00:00: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:44:01.138Z
+2025-07-18T14:44:22: 🚀 ZienSHIELD API iniciando...
+2025-07-18T14:44:22: 📡 Servidor corriendo en puerto 3001
+2025-07-18T14:44:22: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18T14:44:22: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18T14:44:22: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18T14:44:22: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18T14:44:22: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18T14:44:22: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18T14:44:22: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18T14:44:22: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18T14:44:22: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18T14:44:22: 
+2025-07-18T14:44:22: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:44:22.708Z
+2025-07-18T14:45:12: 🚀 ZienSHIELD API iniciando...
+2025-07-18T14:45:12: 📡 Servidor corriendo en puerto 3001
+2025-07-18T14:45:12: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18T14:45:12: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18T14:45:12: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18T14:45:12: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18T14:45:12: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18T14:45:12: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18T14:45:12: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18T14:45:12: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18T14:45:12: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18T14:45:12: 
+2025-07-18T14:45:12: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:45:12.832Z
+2025-07-18 14:45 +00:00: 🚀 ZienSHIELD API iniciando...
+2025-07-18 14:45 +00:00: 📡 Servidor corriendo en puerto 3001
+2025-07-18 14:45 +00:00: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18 14:45 +00:00: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18 14:45 +00:00: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18 14:45 +00:00: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18 14:45 +00:00: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18 14:45 +00:00: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18 14:45 +00:00: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18 14:45 +00:00: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18 14:45 +00:00: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18 14:45 +00:00: 
+2025-07-18 14:45 +00:00: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:45:47.853Z
+2025-07-18T14:46:01: 🚀 ZienSHIELD API iniciando...
+2025-07-18T14:46:01: 📡 Servidor corriendo en puerto 3001
+2025-07-18T14:46:01: 🔗 Health check: http://localhost:3001/api/health
+2025-07-18T14:46:01: 🏢 Empresas: http://localhost:3001/api/companies
+2025-07-18T14:46:01: ➕ Crear empresa: POST http://localhost:3001/api/companies
+2025-07-18T14:46:01: ✏️ Actualizar empresa: PUT http://localhost:3001/api/companies/:id
+2025-07-18T14:46:01: 🗑️ Eliminar empresa: DELETE http://localhost:3001/api/companies/:id
+2025-07-18T14:46:01: 🔄 Sincronizar Wazuh: POST http://localhost:3001/api/sync/wazuh
+2025-07-18T14:46:01: 📊 Estado Wazuh: GET http://localhost:3001/api/sync/wazuh/status
+2025-07-18T14:46:01: 📁 Grupos Wazuh: GET http://localhost:3001/api/sync/wazuh/groups
+2025-07-18T14:46:01: 🌐 CORS configurado para frontend en puerto 3000
+2025-07-18T14:46:01: 
+2025-07-18T14:46:01: ✅ Conexión PostgreSQL exitosa: 2025-07-18T14:46:01.075Z

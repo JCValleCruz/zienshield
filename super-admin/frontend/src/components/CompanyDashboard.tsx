@@ -80,7 +80,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
   const currentSector = getSectorConfig(user.sector || 'DEFAULT');
 
-  // Datos simulados que se integrarán con Wazuh API - ACTUALIZADO con vulnerabilidades por dispositivo
+  // MODIFICADO: Estado que se carga con datos reales
   const [dashboardData, setDashboardData] = useState({
     securityStatus: 'good', // good, warning, critical
     threatsBlocked: 23,
@@ -94,10 +94,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       'Revisar accesos fallidos en recepción'
     ],
     vulnerabilities: {
-      critical: 6,
-      high: 278,
-      medium: 493,
-      low: 39
+      critical: 'N/A',
+      high: 'N/A',
+      medium: 'N/A',
+      low: 'N/A'
     },
     devices: [
       { 
@@ -126,6 +126,81 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       }
     ]
   });
+
+  // NUEVA FUNCIÓN: Cargar datos reales de la empresa
+  const loadCompanyData = async () => {
+    try {
+      setIsLoading(true);
+
+      if (!user.tenant_id) {
+        console.warn('⚠️ No hay tenant_id disponible');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log(`📊 Cargando datos reales para: ${user.company_name} (${user.tenant_id})`);
+
+      const response = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/stats`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          console.log('✅ Datos reales cargados:', result.data);
+          
+          // ACTUALIZAR solo con datos reales
+          setDashboardData(prev => ({
+            ...prev,
+            vulnerabilities: {
+              critical: result.data.vulnerabilities.critical,
+              high: result.data.vulnerabilities.high,
+              medium: result.data.vulnerabilities.medium,
+              low: result.data.vulnerabilities.low
+            },
+            connectedDevices: result.data.agents.active,
+            totalDevices: result.data.agents.total,
+            compliance: result.data.compliance.percentage,
+            threatsBlocked: result.data.alerts.total,
+            criticalIssues: result.data.agents.inactive,
+            lastUpdate: new Date().toLocaleString('es-ES', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })
+          }));
+
+          // Actualizar estado de seguridad basado en datos reales
+          const activePercentage = result.data.agents.total > 0 ? 
+            (result.data.agents.active / result.data.agents.total) * 100 : 0;
+          
+          const hasCriticalVulns = result.data.vulnerabilities.critical !== 'N/A' && 
+            Number(result.data.vulnerabilities.critical) > 0;
+
+          let newStatus = 'good';
+          if (activePercentage < 50 || hasCriticalVulns) {
+            newStatus = 'critical';
+          } else if (activePercentage < 80 || 
+                     (result.data.vulnerabilities.high !== 'N/A' && Number(result.data.vulnerabilities.high) > 50)) {
+            newStatus = 'warning';
+          }
+
+          setDashboardData(prev => ({
+            ...prev,
+            securityStatus: newStatus
+          }));
+
+        } else {
+          console.warn('⚠️ Error en respuesta del servidor:', result.error);
+        }
+      } else {
+        console.warn('⚠️ Error HTTP:', response.status);
+      }
+
+    } catch (error) {
+      console.error('❌ Error cargando datos de empresa:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Componente para mostrar vulnerabilidades de un dispositivo
   const DeviceVulnerabilities = ({ vulnerabilities }: { vulnerabilities: any }) => {
@@ -174,17 +249,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     );
   };
 
-  // Simular carga de datos
+  // MODIFICADO: Cargar datos reales al inicializar
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      // Aquí se integrará con Wazuh API
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-    };
-    loadData();
-  }, []);
+    loadCompanyData();
+  }, [user.tenant_id]);
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -262,7 +330,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               </div>
               <div className="text-gray-300 text-lg">Amenazas bloqueadas</div>
               <div className="text-sm text-green-400 mt-2">
-                ↓ 15% vs. ayer
+                ZienSHIELD protección activa
               </div>
             </div>
 
@@ -292,7 +360,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               </div>
               <div className="text-gray-300 text-lg">Equipos protegidos</div>
               <div className="text-sm text-green-400 mt-2">
-                {Math.round((dashboardData.connectedDevices / dashboardData.totalDevices) * 100)}% cobertura
+                {dashboardData.totalDevices > 0 ? Math.round((dashboardData.connectedDevices / dashboardData.totalDevices) * 100) : 0}% cobertura
               </div>
             </div>
 
@@ -307,12 +375,12 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               </div>
               <div className="text-gray-300 text-lg">{currentSector.complianceLabel}</div>
               <div className={`text-sm ${currentSector.color} mt-2`}>
-                ↑ 5% este mes
+                Nivel actual de cumplimiento
               </div>
             </div>
           </div>
 
-          {/* Desglose de Vulnerabilidades CVE */}
+          {/* MODIFICADO: Desglose de Vulnerabilidades CVE - DATOS REALES */}
           <div className="bg-gray-800 rounded-xl border border-gray-700 mb-8">
             <div className="grid grid-cols-4 divide-x divide-gray-700">
               <div className="p-6 text-center">
@@ -320,24 +388,36 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                   {dashboardData.vulnerabilities.critical}
                 </div>
                 <div className="text-gray-300 text-lg">Critical - Severity</div>
+                {dashboardData.vulnerabilities.critical !== 'N/A' && Number(dashboardData.vulnerabilities.critical) > 0 && (
+                  <div className="text-xs text-red-400 mt-1">Acción inmediata</div>
+                )}
               </div>
               <div className="p-6 text-center">
                 <div className="text-4xl font-bold text-orange-400 mb-2">
                   {dashboardData.vulnerabilities.high}
                 </div>
                 <div className="text-gray-300 text-lg">High - Severity</div>
+                {dashboardData.vulnerabilities.high !== 'N/A' && Number(dashboardData.vulnerabilities.high) > 0 && (
+                  <div className="text-xs text-orange-400 mt-1">Prioridad alta</div>
+                )}
               </div>
               <div className="p-6 text-center">
                 <div className="text-4xl font-bold text-blue-400 mb-2">
                   {dashboardData.vulnerabilities.medium}
                 </div>
                 <div className="text-gray-300 text-lg">Medium - Severity</div>
+                {dashboardData.vulnerabilities.medium !== 'N/A' && Number(dashboardData.vulnerabilities.medium) > 0 && (
+                  <div className="text-xs text-blue-400 mt-1">Revisar pronto</div>
+                )}
               </div>
               <div className="p-6 text-center">
                 <div className="text-4xl font-bold text-green-400 mb-2">
                   {dashboardData.vulnerabilities.low}
                 </div>
                 <div className="text-gray-300 text-lg">Low - Severity</div>
+                {dashboardData.vulnerabilities.low !== 'N/A' && Number(dashboardData.vulnerabilities.low) > 0 && (
+                  <div className="text-xs text-green-400 mt-1">Bajo riesgo</div>
+                )}
               </div>
             </div>
           </div>
@@ -397,10 +477,13 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
             {/* Columna Derecha - Botones de Acción */}
             <div className="space-y-6">
               <div className="space-y-4">
-                <button className="w-full bg-blue-600 text-white p-6 rounded-xl text-left hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={loadCompanyData}
+                  className="w-full bg-blue-600 text-white p-6 rounded-xl text-left hover:bg-blue-700 transition-colors"
+                >
                   <TrendingUp className="w-8 h-8 mb-3" />
-                  <h4 className="font-bold text-lg mb-2">Ver Reporte Semanal</h4>
-                  <p className="opacity-90">Reporte completo para tu seguro</p>
+                  <h4 className="font-bold text-lg mb-2">Actualizar Datos</h4>
+                  <p className="opacity-90">Obtener información actualizada</p>
                 </button>
                 
                 <button className="w-full bg-green-600 text-white p-6 rounded-xl text-left hover:bg-green-700 transition-colors">
