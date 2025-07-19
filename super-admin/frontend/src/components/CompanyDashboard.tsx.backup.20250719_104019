@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Clock, TrendingUp, Users, FileText, Monitor, BarChart3, Settings, Home, LogOut, ChevronDown, ChevronRight, Plus, List } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Clock, TrendingUp, Users, FileText, Monitor, BarChart3, Settings, Home, LogOut } from 'lucide-react';
 
 interface User {
   id: string;
@@ -38,7 +38,6 @@ interface Device {
 const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
-  const [deviceSubMenuOpen, setDeviceSubMenuOpen] = useState(false);
 
   // Configuración del sector basada en los datos del usuario
   const getSectorConfig = (sector: string) => {
@@ -287,35 +286,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     }
   };
 
-  // MODIFICADO: Menú lateral con submenú para dispositivos
+  // Menú lateral
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { 
-      id: 'dispositivos', 
-      label: 'Dispositivos', 
-      icon: Monitor,
-      hasSubmenu: true,
-      submenu: [
-        { id: 'dispositivos-agregar', label: 'Agregar Dispositivo', icon: Plus },
-        { id: 'dispositivos-inventario', label: 'Inventario de Dispositivos', icon: List }
-      ]
-    },
+    { id: 'dispositivos', label: 'Dispositivos', icon: Monitor },
     { id: 'analisis', label: 'Análisis', icon: BarChart3 },
     { id: 'reportes', label: 'Reportes', icon: FileText },
     { id: 'configuracion', label: 'Configuración', icon: Settings }
   ];
-
-  const handleMenuClick = (itemId: string) => {
-    if (itemId === 'dispositivos') {
-      setDeviceSubMenuOpen(!deviceSubMenuOpen);
-    } else {
-      setActiveSection(itemId);
-      // Cerrar submenú si seleccionamos otra sección principal
-      if (!itemId.startsWith('dispositivos-')) {
-        setDeviceSubMenuOpen(false);
-      }
-    }
-  };
 
   const renderContent = () => {
     if (activeSection === 'dashboard') {
@@ -548,20 +526,6 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
           </div>
         </>
       );
-    } else if (activeSection === 'dispositivos-agregar') {
-      return (
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🔧</div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Agregar Dispositivo
-            </h2>
-            <p className="text-gray-400">
-              Enrolar nuevo dispositivo a ZienSHIELD
-            </p>
-          </div>
-        </div>
-      );
     } else {
       return (
         <div className="flex items-center justify-center h-96">
@@ -608,47 +572,18 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.id}>
-                  <button
-                    onClick={() => handleMenuClick(item.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeSection === item.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <Icon className="w-5 h-5 mr-3" />
-                      {item.label}
-                    </div>
-                    {item.hasSubmenu && (
-                      deviceSubMenuOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {/* Submenú de dispositivos */}
-                  {item.hasSubmenu && deviceSubMenuOpen && (
-                    <div className="ml-6 mt-2 space-y-1">
-                      {item.submenu?.map((subItem) => {
-                        const SubIcon = subItem.icon;
-                        return (
-                          <button
-                            key={subItem.id}
-                            onClick={() => handleMenuClick(subItem.id)}
-                            className={`w-full flex items-center px-4 py-2 rounded-lg text-left transition-colors ${
-                              activeSection === subItem.id
-                                ? 'bg-blue-500 text-white'
-                                : 'text-gray-400 hover:bg-gray-600 hover:text-white'
-                            }`}
-                          >
-                            <SubIcon className="w-4 h-4 mr-3" />
-                            {subItem.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeSection === item.id
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </button>
               );
             })}
           </div>
@@ -678,9 +613,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {menuItems.find(item => item.id === activeSection)?.label || 
-                 menuItems.find(item => item.submenu?.find(sub => sub.id === activeSection))?.submenu?.find(sub => sub.id === activeSection)?.label || 
-                 'Dashboard'}
+                {menuItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
               </h1>
               <p className="text-gray-400">
                 {user.company_name} • {user.email}
