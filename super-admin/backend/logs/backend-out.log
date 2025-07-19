@@ -650,3 +650,44 @@ nohup: ignoring input
 📦 Analizando paquetes del agente 008 (UbuntuProxmox)...
 📊 Agente 008: 818 paquetes instalados
 ✅ Vulnerabilidades de la empresa: { total: 201, critical: 39, high: 131, medium: 11, low: 20 }
+📊 Obteniendo estadísticas para la empresa: axafone-tel-001
+🏢 Empresa encontrada: AXAFONE (Grupo Wazuh: zs_axafone_tel_001)
+🔍 Conectando con Wazuh API...
+🔍 Obteniendo agentes del grupo: zs_axafone_tel_001
+📊 Encontrados 7 agentes para el grupo zs_axafone_tel_001
+✅ 7 agentes de la empresa (1 activos)
+🔍 Analizando vulnerabilidades de 7 agentes de la empresa...
+📦 Analizando paquetes del agente 008 (UbuntuProxmox)...
+📊 Agente 008: 818 paquetes instalados
+✅ Vulnerabilidades de la empresa: { total: 201, critical: 39, high: 131, medium: 11, low: 20 }
+📊 Obteniendo estadísticas para la empresa: axafone-tel-001
+🏢 Empresa encontrada: AXAFONE (Grupo Wazuh: zs_axafone_tel_001)
+🔍 Conectando con Wazuh API...
+🔍 Obteniendo agentes del grupo: zs_axafone_tel_001
+📊 Encontrados 7 agentes para el grupo zs_axafone_tel_001
+✅ 7 agentes de la empresa (1 activos)
+🔍 Analizando vulnerabilidades de 7 agentes de la empresa...
+📦 Analizando paquetes del agente 008 (UbuntuProxmox)...
+📊 Agente 008: 818 paquetes instalados
+✅ Vulnerabilidades de la empresa: { total: 201, critical: 39, high: 131, medium: 11, low: 20 }
+📊 Obteniendo estadísticas para la empresa: axafone-tel-001
+🏢 Empresa encontrada: AXAFONE (Grupo Wazuh: zs_axafone_tel_001)
+🔍 Conectando con Wazuh API...
+🔍 Obteniendo agentes del grupo: zs_axafone_tel_001
+📊 Encontrados 7 agentes para el grupo zs_axafone_tel_001
+✅ 7 agentes de la empresa (1 activos)
+🔍 Analizando vulnerabilidades de 7 agentes de la empresa...
+📦 Analizando paquetes del agente 008 (UbuntuProxmox)...
+📊 Agente 008: 818 paquetes instalados
+✅ Vulnerabilidades de la empresa: { total: 201, critical: 39, high: 131, medium: 11, low: 20 }
+📊 Obteniendo estadísticas para la empresa: axafone-tel-001
+🏢 Empresa encontrada: AXAFONE (Grupo Wazuh: zs_axafone_tel_001)
+🔍 Conectando con Wazuh API...
+🔍 Obteniendo agentes del grupo: zs_axafone_tel_001
+📊 Encontrados 7 agentes para el grupo zs_axafone_tel_001
+✅ 7 agentes de la empresa (1 activos)
+🔍 Analizando vulnerabilidades de 7 agentes de la empresa...
+📦 Analizando paquetes del agente 008 (UbuntuProxmox)...
+📊 Agente 008: 818 paquetes instalados
+✅ Vulnerabilidades de la empresa: { total: 201, critical: 39, high: 131, medium: 11, low: 20 }
+📊 Obteniendo estadísticas para la empresa: axafone

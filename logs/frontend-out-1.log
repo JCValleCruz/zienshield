@@ -1718,3 +1718,82 @@
 > frontend@0.1.0 start
 > react-scripts start
 
+
+> frontend@0.1.0 start
+> react-scripts start
+
+Attempting to bind to HOST environment variable: 0.0.0.0
+If this was unintentional, check that you haven't mistakenly set it in your shell.
+Learn more here: https://cra.link/advanced-config
+
+Starting the development server...
+
+2025-07-19T00:16:53: 
+2025-07-19T00:16:53: > frontend@0.1.0 start
+2025-07-19T00:16:53: > react-scripts start
+2025-07-19T00:16:53: 
+2025-07-19T00:16:55: Attempting to bind to HOST environment variable: 0.0.0.0
+2025-07-19T00:16:55: If this was unintentional, check that you haven't mistakenly set it in your shell.
+2025-07-19T00:16:55: Learn more here: https://cra.link/advanced-config
+2025-07-19T00:16:55: 
+2025-07-19T00:16:57: Starting the development server...
+2025-07-19T00:16:57: 
+2025-07-19T00:17:00: Compiled successfully!
+2025-07-19T00:17:00: 
+2025-07-19T00:17:00: You can now view frontend in the browser.
+2025-07-19T00:17:00: 
+2025-07-19T00:17:00:   http://localhost:3000
+2025-07-19T00:17:00: 
+2025-07-19T00:17:00: Note that the development build is not optimized.
+2025-07-19T00:17:00: To create a production build, use npm run build.
+2025-07-19T00:17:00: 
+2025-07-19T00:17:00: webpack compiled successfully
+2025-07-19T00:17:01: Files successfully emitted, waiting for typecheck results...
+2025-07-19T00:17:01: Issues checking in progress...
+2025-07-19T00:17:04: No issues found.
+2025-07-19T00:17:50: 
+2025-07-19T00:17:50: > frontend@0.1.0 start
+2025-07-19T00:17:50: > react-scripts start
+2025-07-19T00:17:50: 
+2025-07-19T00:17:51: Attempting to bind to HOST environment variable: 0.0.0.0
+2025-07-19T00:17:51: If this was unintentional, check that you haven't mistakenly set it in your shell.
+2025-07-19T00:17:51: Learn more here: https://cra.link/advanced-config
+2025-07-19T00:17:51: 
+2025-07-19T00:17:51: Starting the development server...
+2025-07-19T00:17:51: 
+2025-07-19T00:17:53: Compiled successfully!
+2025-07-19T00:17:53: 
+2025-07-19T00:17:53: You can now view frontend in the browser.
+2025-07-19T00:17:53: 
+2025-07-19T00:17:53:   http://localhost:3000
+2025-07-19T00:17:53: 
+2025-07-19T00:17:53: Note that the development build is not optimized.
+2025-07-19T00:17:53: To create a production build, use npm run build.
+2025-07-19T00:17:53: 
+2025-07-19T00:17:53: webpack compiled successfully
+2025-07-19T00:17:53: Files successfully emitted, waiting for typecheck results...
+2025-07-19T00:17:53: Issues checking in progress...
+2025-07-19T00:17:55: No issues found.
+2025-07-19T00:18:46: 
+2025-07-19T00:18:46: > frontend@0.1.0 start
+2025-07-19T00:18:46: > react-scripts start
+2025-07-19T00:18:46: 
+2025-07-19T00:18:47: Attempting to bind to HOST environment variable: 0.0.0.0
+2025-07-19T00:18:47: If this was unintentional, check that you haven't mistakenly set it in your shell.
+2025-07-19T00:18:47: Learn more here: https://cra.link/advanced-config
+2025-07-19T00:18:47: 
+2025-07-19T00:18:48: Starting the development server...
+2025-07-19T00:18:48: 
+2025-07-19T00:18:49: Compiled successfully!
+2025-07-19T00:18:49: 
+2025-07-19T00:18:49: You can now view frontend in the browser.
+2025-07-19T00:18:49: 
+2025-07-19T00:18:49:   http://localhost:3000
+2025-07-19T00:18:49: 
+2025-07-19T00:18:49: Note that the development build is not optimized.
+2025-07-19T00:18:49: To create a production build, use npm run build.
+2025-07-19T00:18:49: 
+2025-07-19T00:18:49: webpack compiled successfully
+2025-07-19T00:18:50: Files successfully emitted, waiting for typecheck results...
+2025-07-19T00:18:50: Issues checking in progress...
+2025-07-19T00:18:50: No issues found.
