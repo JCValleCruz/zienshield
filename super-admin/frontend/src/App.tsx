@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import CompanyDashboard from './components/CompanyDashboard';
-import Login from './components/Login';
+import Login from './components/Login'
 
 interface User {
   id: string;

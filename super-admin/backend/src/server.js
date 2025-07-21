@@ -28,6 +28,7 @@ app.use(cors({
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
+app.use(express.static(__dirname, {setHeaders: function(res) {res.setHeader("Content-Type", "text/html; charset=utf-8");}}));
 app.use(express.urlencoded({ extended: true }));
 
 // Rutas principales

@@ -113,7 +113,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
   const [showDeviceModal, setShowDeviceModal] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<InventoryDevice | null>(null);
 
-  // ConfiguraciÃ³n del sector basada en los datos del usuario
+  // Configuración del sector basada en los datos del usuario
   const getSectorConfig = (sector: string) => {
     const configs = {
       'TELECOM': {
@@ -152,7 +152,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
         complianceLabel: 'Cumplimiento Financiero'
       },
       'TECH': {
-        label: 'TecnologÃ­a',
+        label: 'Tecnología',
         icon: '??',
         criticalChecks: ['source_code_protection', 'ip_security', 'development_security'],
         color: 'text-cyan-400',
@@ -181,8 +181,8 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     totalDevices: 17,
     lastUpdate: '2 min ago',
     urgentActions: [
-      'Actualizar 2 equipos con vulnerabilidades crÃ­ticas',
-      'Revisar accesos fallidos en recepciÃ³n'
+      'Actualizar 2 equipos con vulnerabilidades críticas',
+      'Revisar accesos fallidos en recepción'
     ],
     vulnerabilities: {
       critical: 'N/A',
@@ -197,7 +197,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
   const DeviceVulnerabilities = ({ vulnerabilities }: { vulnerabilities: any }) => {
     return (
       <div className="flex items-center space-x-2 mt-2">
-        {/* CrÃ­ticas */}
+        {/* Críticas */}
         {vulnerabilities.critical > 0 && (
           <div className="flex items-center space-x-1">
             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -240,7 +240,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     );
   };
 
-  // NUEVA FUNCIÃ“N: Cargar datos reales de la empresa
+  // NUEVA FUNCIÓN: Cargar datos reales de la empresa
   const loadCompanyData = async () => {
     try {
       setIsLoading(true);
@@ -253,10 +253,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
       console.log(`?? Cargando datos reales para: ${user.company_name} (${user.tenant_id})`);
 
-      // Cargar estadÃ­sticas generales
+      // Cargar estadísticas generales
       const statsResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/stats`);
       
-      // Cargar dispositivos crÃ­ticos
+      // Cargar dispositivos críticos
       const devicesResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/devices/critical`);
       
       if (statsResponse.ok) {
@@ -307,12 +307,12 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
         }
       }
       
-      // Cargar dispositivos crÃ­ticos reales
+      // Cargar dispositivos críticos reales
       if (devicesResponse.ok) {
         const devicesResult = await devicesResponse.json();
         
         if (devicesResult.success && devicesResult.data && devicesResult.data.devices) {
-          console.log('? Dispositivos crÃ­ticos cargados:', devicesResult.data.devices);
+          console.log('? Dispositivos críticos cargados:', devicesResult.data.devices);
           
           setDashboardData(prev => ({
             ...prev,
@@ -328,7 +328,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     }
   };
 
-  // NUEVA FUNCIÃ“N PARA CARGAR INVENTARIO COMPLETO
+  // NUEVA FUNCIÓN PARA CARGAR INVENTARIO COMPLETO
   const loadInventory = async () => {
     if (!user.tenant_id) return;
 
@@ -364,7 +364,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     }
   };
 
-  // FUNCIÃ“N PARA RENDERIZAR LA VISTA DE INVENTARIO
+  // FUNCIÓN PARA RENDERIZAR LA VISTA DE INVENTARIO
   const renderInventoryContent = () => {
     if (inventoryLoading) {
       return (
@@ -395,7 +395,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
     return (
       <div className="space-y-6">
-        {/* EstadÃ­sticas del Inventario */}
+        {/* Estadísticas del Inventario */}
         <div className="grid grid-cols-6 gap-4 mb-8">
           <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div className="text-2xl font-bold text-blue-400">{inventoryData.stats.total}</div>
@@ -415,7 +415,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
           </div>
           <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div className="text-2xl font-bold text-red-500">{inventoryData.stats.critical_vulnerabilities}</div>
-            <div className="text-gray-300 text-sm">Vuln. CrÃ­ticas</div>
+            <div className="text-gray-300 text-sm">Vuln. Críticas</div>
           </div>
           <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div className="text-2xl font-bold text-orange-500">{inventoryData.stats.high_vulnerabilities}</div>
@@ -423,10 +423,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
           </div>
         </div>
 
-        {/* Filtros y BÃºsqueda */}
+        {/* Filtros y Búsqueda */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <div className="flex flex-wrap items-center gap-4">
-            {/* BÃºsqueda */}
+            {/* Búsqueda */}
             <div className="flex-1 min-w-64">
               <input
                 type="text"
@@ -460,7 +460,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               <option value="os">Sistema Operativo</option>
               <option value="status">Estado</option>
               <option value="criticality_score">Criticidad</option>
-              <option value="last_seen">Ãšltima ConexiÃ³n</option>
+              <option value="last_seen">Última Conexión</option>
             </select>
 
             {/* Orden */}
@@ -473,7 +473,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               <option value="desc">Descendente</option>
             </select>
 
-            {/* BotÃ³n Aplicar Filtros */}
+            {/* Botón Aplicar Filtros */}
             <button
               onClick={loadInventory}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -481,7 +481,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               Aplicar
             </button>
 
-            {/* BotÃ³n Refrescar */}
+            {/* Botón Refrescar */}
             <button
               onClick={loadInventory}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
@@ -502,7 +502,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                   <th className="text-left p-4 text-gray-300 font-semibold">Sistema</th>
                   <th className="text-left p-4 text-gray-300 font-semibold">Hardware</th>
                   <th className="text-left p-4 text-gray-300 font-semibold">Vulnerabilidades</th>
-                  <th className="text-left p-4 text-gray-300 font-semibold">Ãšltima ConexiÃ³n</th>
+                  <th className="text-left p-4 text-gray-300 font-semibold">Última Conexión</th>
                   <th className="text-center p-4 text-gray-300 font-semibold">Acciones</th>
                 </tr>
               </thead>
@@ -571,7 +571,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
             </table>
           </div>
 
-          {/* PaginaciÃ³n */}
+          {/* Paginación */}
           {inventoryData.pagination.pages > 1 && (
             <div className="bg-gray-700 px-6 py-4 flex items-center justify-between">
               <div className="text-sm text-gray-300">
@@ -633,14 +633,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               onClick={onClose}
               className="text-gray-400 hover:text-white text-2xl"
             >
-              Ã—
+              ×
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            {/* InformaciÃ³n BÃ¡sica */}
+            {/* Información Básica */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-blue-400 mb-3">InformaciÃ³n BÃ¡sica</h3>
+              <h3 className="text-lg font-semibold text-blue-400 mb-3">Información Básica</h3>
               <div>
                 <span className="text-gray-400">Nombre:</span>
                 <span className="text-white ml-2 font-medium">{device.name}</span>
@@ -668,7 +668,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                 <span className="text-white ml-2">{device.group}</span>
               </div>
               <div>
-                <span className="text-gray-400">VersiÃ³n:</span>
+                <span className="text-gray-400">Versión:</span>
                 <span className="text-white ml-2">{device.version}</span>
               </div>
             </div>
@@ -693,11 +693,11 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                <span className="text-white ml-2">{device.hardware.cpu}</span>
              </div>
              <div>
-               <span className="text-gray-400">NÃºcleos:</span>
+               <span className="text-gray-400">Núcleos:</span>
                <span className="text-white ml-2">{device.hardware.cores}</span>
              </div>
              <div>
-               <span className="text-gray-400">Ãšltima conexiÃ³n:</span>
+               <span className="text-gray-400">Última conexión:</span>
                <span className="text-white ml-2">{device.last_seen_text}</span>
              </div>
            </div>
@@ -709,7 +709,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            <div className="grid grid-cols-4 gap-4">
              <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30">
                <div className="text-2xl font-bold text-red-400">{device.vulnerabilities.critical}</div>
-               <div className="text-red-300 text-sm">CrÃ­ticas</div>
+               <div className="text-red-300 text-sm">Críticas</div>
              </div>
              <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/30">
                <div className="text-2xl font-bold text-orange-400">{device.vulnerabilities.high}</div>
@@ -730,9 +730,9 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            </div>
          </div>
 
-         {/* InformaciÃ³n TÃ©cnica */}
+         {/* Información Técnica */}
          <div className="mt-6 pt-4 border-t border-gray-700">
-           <h3 className="text-lg font-semibold text-purple-400 mb-3">InformaciÃ³n TÃ©cnica</h3>
+           <h3 className="text-lg font-semibold text-purple-400 mb-3">Información Técnica</h3>
            <div className="grid grid-cols-2 gap-4 text-sm">
              <div>
                <span className="text-gray-400">Manager Host:</span>
@@ -747,7 +747,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                <span className="text-white ml-2">{device.date_add}</span>
              </div>
              <div>
-               <span className="text-gray-400">Ãšltima Actividad:</span>
+               <span className="text-gray-400">Última Actividad:</span>
                <span className="text-white ml-2">{new Date(device.last_seen).toLocaleString('es-ES')}</span>
              </div>
            </div>
@@ -769,7 +769,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            </button>
            <button
              onClick={() => {
-               console.log('AcciÃ³n en dispositivo:', device.id);
+               console.log('Acción en dispositivo:', device.id);
              }}
              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
            >
@@ -806,14 +806,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
  const getStatusMessage = (status: string) => {
    switch(status) {
-     case 'good': return 'Su empresa estÃ¡ PROTEGIDA';
-     case 'warning': return 'Requiere ATENCIÃ“N';
-     case 'critical': return 'ACCIÃ“N INMEDIATA requerida';
+     case 'good': return 'Su empresa está PROTEGIDA';
+     case 'warning': return 'Requiere ATENCIÓN';
+     case 'critical': return 'ACCIÓN INMEDIATA requerida';
      default: return 'Verificando estado...';
    }
  };
 
- // MODIFICADO: MenÃº lateral con submenÃº para dispositivos
+ // MODIFICADO: Menú lateral con submenú para dispositivos
  const menuItems = [
    { id: 'dashboard', label: 'Dashboard', icon: Home },
    { 
@@ -826,9 +826,9 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
        { id: 'dispositivos-inventario', label: 'Inventario de Dispositivos', icon: List }
      ]
    },
-   { id: 'analisis', label: 'AnÃ¡lisis', icon: BarChart3 },
+   { id: 'analisis', label: 'Análisis', icon: BarChart3 },
    { id: 'reportes', label: 'Reportes', icon: FileText },
-   { id: 'configuracion', label: 'ConfiguraciÃ³n', icon: Settings }
+   { id: 'configuracion', label: 'Configuración', icon: Settings }
  ];
 
  const handleMenuClick = (itemId: string) => {
@@ -836,7 +836,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
      setDeviceSubMenuOpen(!deviceSubMenuOpen);
    } else {
      setActiveSection(itemId);
-     // Cerrar submenÃº si seleccionamos otra secciÃ³n principal
+     // Cerrar submenú si seleccionamos otra sección principal
      if (!itemId.startsWith('dispositivos-')) {
        setDeviceSubMenuOpen(false);
      }
@@ -847,7 +847,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
    if (activeSection === 'dashboard') {
      return (
        <>
-         {/* Estado Principal - SemÃ¡foro */}
+         {/* Estado Principal - Semáforo */}
          <div className={`rounded-xl p-8 mb-8 border-2 ${getStatusColor(dashboardData.securityStatus)}`}>
            <div className="flex items-center justify-between">
              <div className="flex items-center space-x-4">
@@ -870,20 +870,20 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            </div>
          </div>
 
-         {/* MÃ©tricas Principales - 4 en fila */}
+         {/* Métricas Principales - 4 en fila */}
          <div className="grid grid-cols-4 gap-6 mb-8">
            {/* Amenazas Bloqueadas */}
            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
              <div className="flex items-center justify-between mb-4">
                <Shield className="w-8 h-8 text-blue-400" />
-               <span className="text-sm text-gray-400">Ãšltimas 24h</span>
+               <span className="text-sm text-gray-400">Últimas 24h</span>
              </div>
              <div className="text-4xl font-bold text-blue-400 mb-2">
                {dashboardData.threatsBlocked}
              </div>
              <div className="text-gray-300 text-lg">Amenazas bloqueadas</div>
              <div className="text-sm text-green-400 mt-2">
-               ZienSHIELD protecciÃ³n activa
+               ZienSHIELD protección activa
              </div>
            </div>
 
@@ -891,14 +891,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
              <div className="flex items-center justify-between mb-4">
                <AlertTriangle className="w-8 h-8 text-orange-400" />
-               <span className="text-sm text-gray-400">CrÃ­ticos</span>
+               <span className="text-sm text-gray-400">Críticos</span>
              </div>
              <div className="text-4xl font-bold text-orange-400 mb-2">
                {dashboardData.criticalIssues}
              </div>
-             <div className="text-gray-300 text-lg">Equipos necesitan atenciÃ³n</div>
+             <div className="text-gray-300 text-lg">Equipos necesitan atención</div>
              <div className="text-sm text-orange-400 mt-2">
-               Requiere acciÃ³n hoy
+               Requiere acción hoy
              </div>
            </div>
 
@@ -942,7 +942,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                </div>
                <div className="text-gray-300 text-lg">Critical - Severity</div>
                {dashboardData.vulnerabilities.critical !== 'N/A' && Number(dashboardData.vulnerabilities.critical) > 0 && (
-                 <div className="text-xs text-red-400 mt-1">AcciÃ³n inmediata</div>
+                 <div className="text-xs text-red-400 mt-1">Acción inmediata</div>
                )}
              </div>
              <div className="p-6 text-center">
@@ -975,7 +975,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            </div>
          </div>
 
-         {/* Dispositivos CrÃ­ticos Reales - TOP 4 */}
+         {/* Dispositivos Críticos Reales - TOP 4 */}
          <div className="grid grid-cols-4 gap-6 mb-8">
            {dashboardData.devices.slice(0, 4).map((device, index) => (
              <div key={device.id || index} className="bg-gray-800 rounded-xl p-6 border border-gray-700">
@@ -995,7 +995,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                  {device.name}
                </div>
                
-               {/* InformaciÃ³n del dispositivo */}
+               {/* Información del dispositivo */}
                <div className="text-gray-300 text-sm mb-1">IP: {device.ip}</div>
                <div className="text-gray-300 text-sm mb-3">{device.os || 'Sistema desconocido'}</div>
                
@@ -1009,7 +1009,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
              </div>
            ))}
            
-           {/* Rellenar espacios vacÃ­os si hay menos de 4 dispositivos */}
+           {/* Rellenar espacios vacíos si hay menos de 4 dispositivos */}
            {Array.from({ length: Math.max(0, 4 - dashboardData.devices.length) }).map((_, index) => (
              <div key={`empty-${index}`} className="bg-gray-800 rounded-xl p-6 border border-gray-700 opacity-50">
                <div className="flex items-center justify-center h-full">
@@ -1046,7 +1046,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
              </div>
            </div>
 
-           {/* Columna Derecha - Botones de AcciÃ³n */}
+           {/* Columna Derecha - Botones de Acción */}
            <div className="space-y-6">
              <div className="space-y-4">
                <button 
@@ -1055,7 +1055,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                >
                  <TrendingUp className="w-8 h-8 mb-3" />
                  <h4 className="font-bold text-lg mb-2">Actualizar Datos</h4>
-                 <p className="opacity-90">Obtener informaciÃ³n actualizada</p>
+                 <p className="opacity-90">Obtener información actualizada</p>
                </button>
                
                <button 
@@ -1099,10 +1099,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
          <div className="text-center">
            <div className="text-6xl mb-4">??</div>
            <h2 className="text-2xl font-bold text-white mb-2">
-             SecciÃ³n en Desarrollo
+             Sección en Desarrollo
            </h2>
            <p className="text-gray-400">
-             {menuItems.find(item => item.id === activeSection)?.label} estarÃ¡ disponible pronto
+             {menuItems.find(item => item.id === activeSection)?.label} estará disponible pronto
            </p>
          </div>
        </div>
@@ -1157,7 +1157,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                    )}
                  </button>
 
-                 {/* SubmenÃº de dispositivos */}
+                 {/* Submenú de dispositivos */}
                  {item.hasSubmenu && deviceSubMenuOpen && (
                    <div className="ml-6 mt-2 space-y-1">
                      {item.submenu?.map((subItem) => {
@@ -1197,7 +1197,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
            className="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
          >
            <LogOut className="w-4 h-4 mr-2" />
-           Cerrar SesiÃ³n
+           Cerrar Sesión
          </button>
        </div>
      </div>
@@ -1214,11 +1214,11 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                 'Dashboard'}
              </h1>
              <p className="text-gray-400">
-               {user.company_name} Â• {user.email}
+               {user.company_name} • {user.email}
              </p>
            </div>
            <p className="text-gray-400">
-             Ãšltima actualizaciÃ³n: {dashboardData.lastUpdate}
+             Última actualización: {dashboardData.lastUpdate}
            </p>
          </div>
        </div>

@@ -635,17 +635,6 @@ const getAllCompanyDevices = async (req, res) => {
           if (osResponse && osResponse.data && osResponse.data.affected_items && osResponse.data.affected_items.length > 0) {
             const osData = osResponse.data.affected_items[0];
             osInfo = {
-              name: osData.os?.name || "Desconocido",
-              version: osData.os?.version || "",
-              architecture: osData.architecture || "N/A"
-            };
-          }
-        } catch (osError) {
-          console.warn(`⚠️ No se pudo obtener OS del agente ${agent.id}`);
-        }
-          if (osResponse && osResponse.data && osResponse.data.affected_items && osResponse.data.affected_items.length > 0) {
-            const osData = osResponse.data.affected_items[0];
-            osInfo = {
               name: `${osData.os_name || "Unknown"} ${osData.os_version || ""}`.trim(),
               version: osData.os_version || "",
               architecture: osData.architecture || "N/A"
@@ -659,17 +648,6 @@ const getAllCompanyDevices = async (req, res) => {
         let hardwareInfo = { ram: "N/A", cpu: "N/A", cores: 0 };
         try {
           const hwResponse = await wazuhApiCall(`/syscollector/${agent.id}/hardware`);
-          if (hwResponse && hwResponse.data && hwResponse.data.affected_items && hwResponse.data.affected_items.length > 0) {
-            const hwData = hwResponse.data.affected_items[0];
-            hardwareInfo = {
-              ram: hwData.ram?.total ? `${Math.round(hwData.ram.total / (1024 * 1024))} GB` : "N/A",
-              cpu: hwData.cpu?.name ? hwData.cpu.name.trim() : "N/A",
-              cores: hwData.cpu?.cores || 0
-            };
-          }
-        } catch (hwError) {
-          console.warn(`⚠️ No se pudo obtener hardware del agente ${agent.id}`);
-        }
           if (hwResponse && hwResponse.data && hwResponse.data.affected_items && hwResponse.data.affected_items.length > 0) {
             const hwData = hwResponse.data.affected_items[0];
             hardwareInfo = {
