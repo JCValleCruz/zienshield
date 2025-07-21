@@ -1,11 +1,11 @@
 const pool = require('../../config/database');
 
-// Configuraci�n de Wazuh API
+// Configuración de Wazuh API
 const WAZUH_API_URL = 'https://194.164.172.92:55000';
 const WAZUH_USERNAME = 'wazuh';
 const WAZUH_PASSWORD = 'wazuh';
 
-// Deshabilitar verificaci�n SSL para certificados autofirmados
+// Deshabilitar verificación SSL para certificados autofirmados
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 // Base de datos de paquetes conocidos con vulnerabilidades
@@ -28,7 +28,7 @@ const VULNERABLE_PACKAGES = {
   ]
 };
 
-// Funci�n para obtener token de autenticaci�n de Wazuh
+// Función para obtener token de autenticación de Wazuh
 const getWazuhToken = async () => {
   try {
     const response = await fetch(`${WAZUH_API_URL}/security/user/authenticate`, {
@@ -40,7 +40,7 @@ const getWazuhToken = async () => {
     });
 
     if (!response.ok) {
-      throw new Error(`Error de autenticaci�n Wazuh: ${response.status}`);
+      throw new Error(`Error de autenticación Wazuh: ${response.status}`);
     }
 
     const data = await response.json();
@@ -51,7 +51,7 @@ const getWazuhToken = async () => {
   }
 };
 
-// Funci�n para hacer llamadas autenticadas a Wazuh API
+// Función para hacer llamadas autenticadas a Wazuh API
 const wazuhApiCall = async (endpoint) => {
   try {
     const token = await getWazuhToken();
@@ -79,15 +79,15 @@ const wazuhApiCall = async (endpoint) => {
   }
 };
 
-// Funci�n para obtener agentes de una empresa espec�fica
+// Función para obtener agentes de una empresa específica
 const getCompanyAgents = async (wazuhGroup) => {
   try {
-    console.log(`?? Obteniendo agentes del grupo: ${wazuhGroup}`);
+    console.log(`🔍 Obteniendo agentes del grupo: ${wazuhGroup}`);
 
     const agentsResponse = await wazuhApiCall('/agents?limit=1000');
     
     if (!agentsResponse || !agentsResponse.data || !agentsResponse.data.affected_items) {
-      console.warn('?? No se pudieron obtener agentes');
+      console.warn('⚠️ No se pudieron obtener agentes');
       return [];
     }
 
@@ -96,19 +96,19 @@ const getCompanyAgents = async (wazuhGroup) => {
       return agent.group && agent.group.includes(wazuhGroup);
     });
 
-    console.log(`?? Encontrados ${companyAgents.length} agentes para el grupo ${wazuhGroup}`);
+    console.log(`📊 Encontrados ${companyAgents.length} agentes para el grupo ${wazuhGroup}`);
     return companyAgents;
 
   } catch (error) {
-    console.error('? Error obteniendo agentes de la empresa:', error);
+    console.error('❌ Error obteniendo agentes de la empresa:', error);
     return [];
   }
 };
 
-// Funci�n para analizar vulnerabilidades de agentes espec�ficos de una empresa
+// Función para analizar vulnerabilidades de agentes específicos de una empresa
 const analyzeCompanyVulnerabilities = async (companyAgents) => {
   try {
-    console.log(`?? Analizando vulnerabilidades de ${companyAgents.length} agentes de la empresa...`);
+    console.log(`🔍 Analizando vulnerabilidades de ${companyAgents.length} agentes de la empresa...`);
 
     let vulnerabilityStats = {
       total: 0,
@@ -122,19 +122,19 @@ const analyzeCompanyVulnerabilities = async (companyAgents) => {
     const activeAgents = companyAgents.filter(agent => agent.status === 'active');
     
     if (activeAgents.length === 0) {
-      console.log('?? No hay agentes activos en esta empresa');
+      console.log('⚠️ No hay agentes activos en esta empresa');
       return null;
     }
 
     for (const agent of activeAgents) {
       try {
-        console.log(`?? Analizando paquetes del agente ${agent.id} (${agent.name})...`);
+        console.log(`📦 Analizando paquetes del agente ${agent.id} (${agent.name})...`);
 
         const packagesResponse = await wazuhApiCall(`/syscollector/${agent.id}/packages?limit=1000`);
         
         if (packagesResponse && packagesResponse.data && packagesResponse.data.affected_items) {
           const packages = packagesResponse.data.affected_items;
-          console.log(`?? Agente ${agent.id}: ${packages.length} paquetes instalados`);
+          console.log(`📊 Agente ${agent.id}: ${packages.length} paquetes instalados`);
 
           // Analizar cada paquete para identificar vulnerabilidades potenciales
           packages.forEach(pkg => {
@@ -142,7 +142,7 @@ const analyzeCompanyVulnerabilities = async (companyAgents) => {
             
             let foundVulnerability = false;
 
-            // Verificar paquetes cr�ticos
+            // Verificar paquetes críticos
             VULNERABLE_PACKAGES.critical.forEach(vulnPkg => {
               if (packageName.includes(vulnPkg) && !foundVulnerability) {
                 vulnerabilityStats.critical++;
@@ -187,31 +187,31 @@ const analyzeCompanyVulnerabilities = async (companyAgents) => {
         }
 
       } catch (agentError) {
-        console.warn(`?? Error analizando agente ${agent.id}:`, agentError.message);
+        console.warn(`⚠️ Error analizando agente ${agent.id}:`, agentError.message);
         continue;
       }
     }
 
     if (vulnerabilityStats.total > 0) {
-      console.log(`? Vulnerabilidades de la empresa:`, vulnerabilityStats);
+      console.log(`✅ Vulnerabilidades de la empresa:`, vulnerabilityStats);
       return vulnerabilityStats;
     }
 
-    console.warn('?? No se identificaron vulnerabilidades en la empresa');
+    console.warn('⚠️ No se identificaron vulnerabilidades en la empresa');
     return null;
 
   } catch (error) {
-    console.error('? Error analizando vulnerabilidades de la empresa:', error);
+    console.error('❌ Error analizando vulnerabilidades de la empresa:', error);
     return null;
   }
 };
 
-// Obtener estad�sticas espec�ficas de una empresa
+// Obtener estadísticas específicas de una empresa
 const getCompanyStats = async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    console.log(`?? Obteniendo estad�sticas para la empresa: ${tenantId}`);
+    console.log(`📊 Obteniendo estadísticas para la empresa: ${tenantId}`);
 
     // Buscar empresa en la base de datos
     const companyQuery = `
@@ -232,18 +232,18 @@ const getCompanyStats = async (req, res) => {
     const company = companyResult.rows[0];
     const wazuhGroup = company.wazuh_group;
 
-    console.log(`?? Empresa encontrada: ${company.name} (Grupo Wazuh: ${wazuhGroup || 'No asignado'})`);
+    console.log(`🏢 Empresa encontrada: ${company.name} (Grupo Wazuh: ${wazuhGroup || 'No asignado'})`);
 
-    // Inicializar estad�sticas
+    // Inicializar estadísticas
     let agentStats = { total: 0, active: 0, inactive: 0, pending: 0 };
     let vulnerabilityStats = null;
     let wazuhStatus = { status: 'disconnected', version: 'unknown' };
 
     if (wazuhGroup) {
       try {
-        console.log('?? Conectando con Wazuh API...');
+        console.log('🔍 Conectando con Wazuh API...');
 
-        // Obtener informaci�n del manager
+        // Obtener información del manager
         const managerInfo = await wazuhApiCall('/manager/info');
         if (managerInfo && managerInfo.data) {
           wazuhStatus = {
@@ -253,7 +253,7 @@ const getCompanyStats = async (req, res) => {
           };
         }
 
-        // Obtener agentes espec�ficos de esta empresa
+        // Obtener agentes específicos de esta empresa
         const companyAgents = await getCompanyAgents(wazuhGroup);
 
         if (companyAgents.length > 0) {
@@ -264,7 +264,7 @@ const getCompanyStats = async (req, res) => {
             pending: companyAgents.filter(agent => agent.status === 'pending' || agent.status === 'never_connected').length
           };
 
-          console.log(`? ${agentStats.total} agentes de la empresa (${agentStats.active} activos)`);
+          console.log(`✅ ${agentStats.total} agentes de la empresa (${agentStats.active} activos)`);
 
           // Analizar vulnerabilidades solo de esta empresa
           if (agentStats.active > 0) {
@@ -273,11 +273,11 @@ const getCompanyStats = async (req, res) => {
         }
 
       } catch (error) {
-        console.warn('?? Error conectando con Wazuh API:', error.message);
+        console.warn('⚠️ Error conectando con Wazuh API:', error.message);
       }
     }
 
-    // Estad�sticas simuladas para alertas (basadas en agentes activos de la empresa)
+    // Estadísticas simuladas para alertas (basadas en agentes activos de la empresa)
     const alertStats = {
       total: agentStats.active * 8,
       critical: Math.floor(agentStats.active * 0.3),
@@ -286,7 +286,7 @@ const getCompanyStats = async (req, res) => {
       low: Math.floor(agentStats.active * 4.4)
     };
 
-    // Calcular compliance espec�fico de la empresa
+    // Calcular compliance específico de la empresa
     const compliance = agentStats.total > 0 ? 
       Math.round(((agentStats.active / agentStats.total) * 100)) : 85;
 
@@ -312,7 +312,7 @@ const getCompanyStats = async (req, res) => {
       compliance: {
         percentage: compliance
       },
-      vulnerabilities: finalVulnerabilityStats, // ? Solo vulnerabilidades de esta empresa
+      vulnerabilities: finalVulnerabilityStats, // ← Solo vulnerabilidades de esta empresa
       wazuh: wazuhStatus,
       timestamp: new Date().toISOString()
     };
@@ -323,17 +323,16 @@ const getCompanyStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error obteniendo estad�sticas de la empresa:', error);
+    console.error('Error obteniendo estadísticas de la empresa:', error);
     res.status(500).json({
       success: false,
-      error: 'Error obteniendo estad�sticas de la empresa',
+      error: 'Error obteniendo estadísticas de la empresa',
       details: error.message
     });
   }
 };
 
-
-// Funci�n para calcular el score de criticidad de un dispositivo
+// Función para calcular el score de criticidad de un dispositivo
 const calculateCriticalityScore = (vulnerabilities) => {
   const critical = vulnerabilities.critical || 0;
   const high = vulnerabilities.high || 0;
@@ -343,15 +342,15 @@ const calculateCriticalityScore = (vulnerabilities) => {
   return (critical * 10) + (high * 5) + (medium * 3) + (low * 1);
 };
 
-// Funci�n para analizar vulnerabilidades de un agente espec�fico
+// Función para analizar vulnerabilidades de un agente específico
 const analyzeAgentVulnerabilities = async (agent) => {
   try {
-    console.log(`?? Analizando vulnerabilidades del agente ${agent.id} (${agent.name})...`);
+    console.log(`🔍 Analizando vulnerabilidades del agente ${agent.id} (${agent.name})...`);
 
     const packagesResponse = await wazuhApiCall(`/syscollector/${agent.id}/packages?limit=1000`);
 
     if (!packagesResponse || !packagesResponse.data || !packagesResponse.data.affected_items) {
-      console.warn(`?? No se pudieron obtener paquetes del agente ${agent.id}`);
+      console.warn(`⚠️ No se pudieron obtener paquetes del agente ${agent.id}`);
       return {
         critical: 0,
         high: 0,
@@ -361,7 +360,7 @@ const analyzeAgentVulnerabilities = async (agent) => {
     }
 
     const packages = packagesResponse.data.affected_items;
-    console.log(`?? Agente ${agent.id}: ${packages.length} paquetes instalados`);
+    console.log(`📦 Agente ${agent.id}: ${packages.length} paquetes instalados`);
 
     let vulnerabilities = {
       critical: 0,
@@ -409,11 +408,11 @@ const analyzeAgentVulnerabilities = async (agent) => {
       }
     });
 
-    console.log(`?? Agente ${agent.id} vulnerabilidades:`, vulnerabilities);
+    console.log(`📊 Agente ${agent.id} vulnerabilidades:`, vulnerabilities);
     return vulnerabilities;
 
   } catch (error) {
-    console.error(`? Error analizando agente ${agent.id}:`, error);
+    console.error(`❌ Error analizando agente ${agent.id}:`, error);
     return {
       critical: 0,
       high: 0,
@@ -423,11 +422,11 @@ const analyzeAgentVulnerabilities = async (agent) => {
   }
 };
 
-// Funci�n principal para obtener dispositivos cr�ticos de una empresa
+// Función principal para obtener dispositivos críticos de una empresa
 const getCriticalDevices = async (req, res) => {
   try {
     const { tenantId } = req.params;
-    console.log(`?? Obteniendo dispositivos cr�ticos para la empresa: ${tenantId}`);
+    console.log(`🎯 Obteniendo dispositivos críticos para la empresa: ${tenantId}`);
 
     const companyQuery = `
       SELECT id, name, sector, wazuh_group, admin_name, admin_email
@@ -486,10 +485,13 @@ const getCriticalDevices = async (req, res) => {
           const osResponse = await wazuhApiCall(`/syscollector/${agent.id}/os`);
           if (osResponse && osResponse.data && osResponse.data.affected_items && osResponse.data.affected_items.length > 0) {
             const osData = osResponse.data.affected_items[0];
-            osInfo = `${osData.os_name || "Unknown"} ${osData.os_version || ""}`.trim();
+            // USAR CAMPOS CORRECTOS
+            const osName = osData.os?.name || osData.sysname || "Unknown";
+            const osVersion = osData.os?.version || "";
+            osInfo = `${osName} ${osVersion}`.trim();
           }
         } catch (osError) {
-          console.warn(`?? No se pudo obtener OS del agente ${agent.id}`);
+          console.warn(`⚠️ No se pudo obtener OS del agente ${agent.id}`);
         }
 
         const vulnerabilities = await analyzeAgentVulnerabilities(agent);
@@ -510,7 +512,7 @@ const getCriticalDevices = async (req, res) => {
         devicesWithScores.push(deviceData);
 
       } catch (agentError) {
-        console.error(`? Error procesando agente ${agent.id}:`, agentError);
+        console.error(`❌ Error procesando agente ${agent.id}:`, agentError);
         continue;
       }
     }
@@ -538,25 +540,25 @@ const getCriticalDevices = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("? Error obteniendo dispositivos cr�ticos:", error);
+    console.error("❌ Error obteniendo dispositivos críticos:", error);
     res.status(500).json({
       success: false,
-      error: "Error obteniendo dispositivos cr�ticos",
+      error: "Error obteniendo dispositivos críticos",
       details: error.message
     });
   }
 };
 
-// NUEVA FUNCI�N: Obtener inventario completo de dispositivos de una empresa
+// FUNCIÓN NUEVA: Obtener inventario completo de dispositivos - COMPLETAMENTE CORREGIDA
 const getAllCompanyDevices = async (req, res) => {
   try {
     const { tenantId } = req.params;
     const { page = 1, limit = 20, search = '', sortBy = 'name', sortOrder = 'asc', status = 'all' } = req.query;
-    
-    console.log(`?? Obteniendo inventario completo para empresa: ${tenantId}`);
-    console.log(`?? Filtros: page=${page}, limit=${limit}, search="${search}", sortBy=${sortBy}, status=${status}`);
 
-    // Buscar empresa
+    console.log(`📋 Obteniendo inventario completo para empresa: ${tenantId}`);
+    console.log(`🔍 Filtros: page=${page}, limit=${limit}, search="${search}", sortBy=${sortBy}, status=${status}`);
+
+    // Buscar empresa en la base de datos
     const companyQuery = `
       SELECT id, name, sector, wazuh_group, admin_name, admin_email
       FROM companies
@@ -580,19 +582,14 @@ const getAllCompanyDevices = async (req, res) => {
         success: true,
         data: {
           devices: [],
-          pagination: {
-            total: 0,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: 0
-          },
-          filters: { search, status, sortBy, sortOrder },
-          message: "Empresa sin agentes configurados"
+          stats: { total: 0, active: 0, disconnected: 0, pending: 0, critical_vulnerabilities: 0, high_vulnerabilities: 0 },
+          pagination: { total: 0, page: parseInt(page), limit: parseInt(limit), pages: 0, has_next: false, has_prev: false },
+          filters: { search, status, sortBy, sortOrder }
         }
       });
     }
 
-    // Verificar conexi�n con Wazuh
+    // Verificar conexión con Wazuh
     const managerInfo = await wazuhApiCall("/manager/info");
     if (!managerInfo || !managerInfo.data) {
       return res.status(503).json({
@@ -601,7 +598,7 @@ const getAllCompanyDevices = async (req, res) => {
       });
     }
 
-    // Obtener TODOS los agentes de la empresa
+    // Obtener todos los agentes de la empresa
     const companyAgents = await getCompanyAgents(wazuhGroup);
 
     if (companyAgents.length === 0) {
@@ -609,132 +606,154 @@ const getAllCompanyDevices = async (req, res) => {
         success: true,
         data: {
           devices: [],
-          pagination: {
-            total: 0,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: 0
-          },
-          filters: { search, status, sortBy, sortOrder },
-          message: "No hay dispositivos registrados para esta empresa"
+          stats: { total: 0, active: 0, disconnected: 0, pending: 0, critical_vulnerabilities: 0, high_vulnerabilities: 0 },
+          pagination: { total: 0, page: parseInt(page), limit: parseInt(limit), pages: 0, has_next: false, has_prev: false },
+          filters: { search, status, sortBy, sortOrder }
         }
       });
     }
 
-    console.log(`?? Procesando ${companyAgents.length} dispositivos...`);
+    console.log(`🔍 Procesando ${companyAgents.length} agentes de la empresa...`);
 
-    // Procesar todos los dispositivos con informaci�n detallada
-    const allDevices = [];
+    const fullDevicesList = [];
 
+    // ========== PROCESAMIENTO DE CADA AGENTE ==========
     for (const agent of companyAgents) {
       try {
-        // Obtener informaci�n del OS
-        let osInfo = { name: "Desconocido", version: "", architecture: "N/A" };
+        console.log(`🔍 Procesando agente: ${agent.name} (ID: ${agent.id})`);
+        
+        // ========== EXTRACCIÓN DE OS - CORREGIDA ==========
+        let osInfo = "Desconocido";
+        let osVersion = "";
+        let architecture = "N/A";
+        
         try {
+          console.log(`🖥️ Obteniendo OS del agente ${agent.id}...`);
           const osResponse = await wazuhApiCall(`/syscollector/${agent.id}/os`);
+          
           if (osResponse && osResponse.data && osResponse.data.affected_items && osResponse.data.affected_items.length > 0) {
             const osData = osResponse.data.affected_items[0];
-            osInfo = {
-              name: osData.os?.name || "Desconocido",
-              version: osData.os?.version || "",
-              architecture: osData.architecture || "N/A"
-            };
+            console.log(`📊 OS Data para agente ${agent.id}:`, JSON.stringify(osData, null, 2));
+            
+            // USAR CAMPOS REALES DE WAZUH - ESTRUCTURA CONFIRMADA
+            const osName = osData.os?.name || osData.sysname || "Desconocido";
+            osVersion = osData.os?.version || "";
+            architecture = osData.architecture || "N/A";
+            
+            osInfo = `${osName} ${osVersion}`.trim();
+            
+            console.log(`✅ OS extraído correctamente para ${agent.id}: ${osInfo}`);
+          } else {
+            console.warn(`⚠️ No se encontraron datos de OS para el agente ${agent.id}`);
           }
         } catch (osError) {
-          console.warn(`⚠️ No se pudo obtener OS del agente ${agent.id}`);
-        }
-          if (osResponse && osResponse.data && osResponse.data.affected_items && osResponse.data.affected_items.length > 0) {
-            const osData = osResponse.data.affected_items[0];
-            osInfo = {
-              name: `${osData.os_name || "Unknown"} ${osData.os_version || ""}`.trim(),
-              version: osData.os_version || "",
-              architecture: osData.architecture || "N/A"
-            };
-          }
-        } catch (osError) {
-          console.warn(`?? No se pudo obtener OS del agente ${agent.id}`);
+          console.error(`❌ Error obteniendo OS del agente ${agent.id}:`, osError.message);
         }
 
-        // Obtener informaci�n de hardware
-        let hardwareInfo = { ram: "N/A", cpu: "N/A", cores: 0 };
+        // ========== EXTRACCIÓN DE HARDWARE - CORREGIDA ==========
+        let hardwareInfo = { ram: "N/A", cpu: "N/A", cores: 0, ramMB: 0 };
+        
         try {
+          console.log(`🔧 Obteniendo hardware del agente ${agent.id}...`);
           const hwResponse = await wazuhApiCall(`/syscollector/${agent.id}/hardware`);
+          
           if (hwResponse && hwResponse.data && hwResponse.data.affected_items && hwResponse.data.affected_items.length > 0) {
             const hwData = hwResponse.data.affected_items[0];
+            console.log(`🔩 Hardware Data para agente ${agent.id}:`, JSON.stringify(hwData, null, 2));
+            
+            // USAR CAMPOS REALES DE WAZUH - ESTRUCTURA CONFIRMADA
+            // RAM: viene en KB, convertir a GB
+            let ramValue = "N/A";
+            let ramMB = 0;
+            
+            if (hwData.ram && hwData.ram.total) {
+              const ramKB = parseInt(hwData.ram.total);
+              const ramGB = Math.round(ramKB / (1024 * 1024));
+              ramValue = `${ramGB} GB`;
+              ramMB = Math.round(ramKB / 1024);
+            }
+            
+            // CPU: extraer nombre y cores
+            let cpuName = "N/A";
+            let cpuCores = 0;
+            
+            if (hwData.cpu) {
+              cpuName = (hwData.cpu.name || "N/A").trim();
+              cpuCores = parseInt(hwData.cpu.cores) || 0;
+            }
+            
             hardwareInfo = {
-              ram: hwData.ram?.total ? `${Math.round(hwData.ram.total / (1024 * 1024))} GB` : "N/A",
-              cpu: hwData.cpu?.name ? hwData.cpu.name.trim() : "N/A",
-              cores: hwData.cpu?.cores || 0
+              ram: ramValue,
+              cpu: cpuName,
+              cores: cpuCores,
+              ramMB: ramMB
             };
+            
+            console.log(`✅ Hardware extraído correctamente para ${agent.id}:`, hardwareInfo);
+          } else {
+            console.warn(`⚠️ No se encontraron datos de hardware para el agente ${agent.id}`);
           }
         } catch (hwError) {
-          console.warn(`⚠️ No se pudo obtener hardware del agente ${agent.id}`);
-        }
-          if (hwResponse && hwResponse.data && hwResponse.data.affected_items && hwResponse.data.affected_items.length > 0) {
-            const hwData = hwResponse.data.affected_items[0];
-            hardwareInfo = {
-              ram: hwData.ram_total ? `${Math.round(hwData.ram_total / (1024 * 1024 * 1024))} GB` : "N/A",
-              cpu: hwData.cpu_name || "N/A",
-              cores: hwData.cpu_cores || 0
-            };
-          }
-        } catch (hwError) {
-          console.warn(`?? No se pudo obtener hardware del agente ${agent.id}`);
+          console.error(`❌ Error obteniendo hardware del agente ${agent.id}:`, hwError.message);
         }
 
         // Analizar vulnerabilidades
         const vulnerabilities = await analyzeAgentVulnerabilities(agent);
         const criticalityScore = calculateCriticalityScore(vulnerabilities);
 
-        // Calcular tiempo desde �ltima conexi�n
-        const lastSeen = agent.lastKeepAlive || agent.dateAdd || new Date().toISOString();
-        const lastSeenDate = new Date(lastSeen);
-        const now = new Date();
-        const timeDiff = Math.floor((now - lastSeenDate) / (1000 * 60)); // minutos
+        // Calcular tiempo desde la última conexión
+        let lastSeenText = "Nunca conectado";
+        if (agent.lastKeepAlive || agent.dateAdd) {
+          const lastSeen = new Date(agent.lastKeepAlive || agent.dateAdd);
+          const now = new Date();
+          const diffMs = now - lastSeen;
+          const diffMinutes = Math.floor(diffMs / (1000 * 60));
+          const diffHours = Math.floor(diffMinutes / 60);
+          const diffDays = Math.floor(diffHours / 24);
 
-        let lastSeenText = "Ahora mismo";
-        if (timeDiff > 0) {
-          if (timeDiff < 60) {
-            lastSeenText = `Hace ${timeDiff} min`;
-          } else if (timeDiff < 1440) {
-            lastSeenText = `Hace ${Math.floor(timeDiff / 60)}h`;
+          if (diffMinutes < 60) {
+            lastSeenText = `Hace ${diffMinutes} min`;
+          } else if (diffHours < 24) {
+            lastSeenText = `Hace ${diffHours}h`;
           } else {
-            lastSeenText = `Hace ${Math.floor(timeDiff / 1440)} d�as`;
+            lastSeenText = `Hace ${diffDays} días`;
           }
         }
 
+        // Crear el objeto del dispositivo con información correcta
         const deviceData = {
           id: agent.id,
           name: agent.name || `Agent-${agent.id}`,
           ip: agent.ip || "N/A",
-          os: osInfo.name,
-          os_version: osInfo.version,
-          architecture: osInfo.architecture,
-          hardware: hardwareInfo,
+          os: osInfo,  // ← AHORA CON DATOS REALES
+          os_version: osVersion,
+          architecture: architecture,
+          hardware: hardwareInfo, // ← AHORA CON DATOS REALES
           status: agent.status,
-          last_seen: lastSeen,
+          last_seen: agent.lastKeepAlive || agent.dateAdd || new Date().toISOString(),
           last_seen_text: lastSeenText,
           vulnerabilities: vulnerabilities,
           criticality_score: criticalityScore,
           group: agent.group ? agent.group.join(", ") : wazuhGroup,
           version: agent.version || "N/A",
           manager_host: agent.manager || "N/A",
-          node_name: agent.node_name || "N/A",
+          node_name: agent.node_name || agent.name || "N/A",
           date_add: agent.dateAdd || "N/A"
         };
 
-        allDevices.push(deviceData);
+        fullDevicesList.push(deviceData);
+        console.log(`✅ Dispositivo procesado: ${agent.name} - OS: ${osInfo} - CPU: ${hardwareInfo.cpu}`);
 
       } catch (agentError) {
-        console.error(`? Error procesando agente ${agent.id}:`, agentError);
+        console.error(`❌ Error procesando agente ${agent.id}:`, agentError);
         
-        // A�adir dispositivo con informaci�n b�sica si falla el procesamiento detallado
-        allDevices.push({
+        // Agregar dispositivo con error pero información básica
+        fullDevicesList.push({
           id: agent.id,
           name: agent.name || `Agent-${agent.id}`,
           ip: agent.ip || "N/A",
-          os: "Error al obtener datos",
-          os_version: "",
+          os: "Error obteniendo información",
+          os_version: "N/A",
           architecture: "N/A",
           hardware: { ram: "N/A", cpu: "N/A", cores: 0 },
           status: agent.status,
@@ -745,115 +764,114 @@ const getAllCompanyDevices = async (req, res) => {
           group: agent.group ? agent.group.join(", ") : wazuhGroup,
           version: agent.version || "N/A",
           manager_host: agent.manager || "N/A",
-          node_name: agent.node_name || "N/A",
+          node_name: agent.node_name || agent.name || "N/A",
           date_add: agent.dateAdd || "N/A",
-          error: "Error al procesar dispositivo"
+          error: `Error procesando agente: ${agentError.message}`
         });
       }
     }
 
-    // Aplicar filtros
-    let filteredDevices = allDevices;
+    console.log(`📊 Total dispositivos procesados: ${fullDevicesList.length}`);
 
-    // Filtro por estado
-    if (status !== 'all') {
-      filteredDevices = filteredDevices.filter(device => device.status === status);
-    }
+    // ========== APLICAR FILTROS ==========
+    let filteredDevices = fullDevicesList;
 
-    // Filtro por b�squeda (nombre, IP o OS)
     if (search.trim()) {
       const searchLower = search.toLowerCase();
       filteredDevices = filteredDevices.filter(device => 
         device.name.toLowerCase().includes(searchLower) ||
         device.ip.toLowerCase().includes(searchLower) ||
-        device.os.toLowerCase().includes(searchLower)
+        device.os.toLowerCase().includes(searchLower) ||
+        device.id.toLowerCase().includes(searchLower)
       );
     }
 
-    // Aplicar ordenaci�n
-    filteredDevices.sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
+    // Aplicar filtros de estado
+    if (status !== 'all') {
+      filteredDevices = filteredDevices.filter(device => device.status === status);
+    }
 
-      // Manejar ordenaci�n especial para campos espec�ficos
+    // ========== APLICAR ORDENAMIENTO ==========
+    filteredDevices.sort((a, b) => {
+      let aValue = a[sortBy] || '';
+      let bValue = b[sortBy] || '';
+
+      // Manejar casos especiales de ordenamiento
       if (sortBy === 'criticality_score') {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-      
-      if (sortBy === 'last_seen') {
+        aValue = Number(aValue) || 0;
+        bValue = Number(bValue) || 0;
+      } else if (sortBy === 'last_seen') {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-
-      // Ordenaci�n de strings
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
       }
+
+      if (sortOrder === 'desc') {
+        return bValue > aValue ? 1 : -1;
+      }
+      return aValue > bValue ? 1 : -1;
     });
 
-    // Aplicar paginaci�n
-    const total = filteredDevices.length;
-    const pages = Math.ceil(total / limit);
+    // ========== APLICAR PAGINACIÓN ==========
+    const totalDevices = filteredDevices.length;
+    const totalPages = Math.ceil(totalDevices / limit);
     const startIndex = (page - 1) * limit;
-    const paginatedDevices = filteredDevices.slice(startIndex, startIndex + limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedDevices = filteredDevices.slice(startIndex, endIndex);
 
-    // Estad�sticas generales
+    // ========== CALCULAR ESTADÍSTICAS ==========
     const stats = {
-      total: allDevices.length,
-      active: allDevices.filter(d => d.status === 'active').length,
-      disconnected: allDevices.filter(d => d.status === 'disconnected').length,
-      pending: allDevices.filter(d => d.status === 'pending' || d.status === 'never_connected').length,
-      critical_vulnerabilities: allDevices.reduce((sum, d) => sum + d.vulnerabilities.critical, 0),
-      high_vulnerabilities: allDevices.reduce((sum, d) => sum + d.vulnerabilities.high, 0)
+      total: totalDevices,
+      active: filteredDevices.filter(d => d.status === 'active').length,
+      disconnected: filteredDevices.filter(d => d.status === 'disconnected').length,
+      pending: filteredDevices.filter(d => d.status === 'pending').length,
+      critical_vulnerabilities: filteredDevices.reduce((sum, d) => sum + d.vulnerabilities.critical, 0),
+      high_vulnerabilities: filteredDevices.reduce((sum, d) => sum + d.vulnerabilities.high, 0)
     };
+
+    // ========== RESPUESTA FINAL ==========
+    const responseData = {
+      company: {
+        name: company.name,
+        tenant_id: tenantId,
+        sector: company.sector
+      },
+      devices: paginatedDevices,
+      stats: stats,
+      pagination: {
+        total: totalDevices,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: totalPages,
+        has_next: page < totalPages,
+        has_prev: page > 1
+      },
+      filters: { search, status, sortBy, sortOrder },
+      analysis_timestamp: new Date().toISOString()
+    };
+
+    console.log(`✅ Inventario completado - ${paginatedDevices.length} dispositivos devueltos de ${totalDevices} total`);
 
     res.json({
       success: true,
-      data: {
-        company: {
-          name: company.name,
-          tenant_id: tenantId,ReintentarJCContinuarEditarbashsector: company.sector
-       },
-       devices: paginatedDevices,
-       stats: stats,
-       pagination: {
-         total: total,
-         page: parseInt(page),
-         limit: parseInt(limit),
-         pages: pages,
-         has_next: page < pages,
-         has_prev: page > 1
-       },
-       filters: {
-         search,
-         status,
-         sortBy,
-         sortOrder
-       },
-       analysis_timestamp: new Date().toISOString()
-     }
-   });
+      data: responseData
+    });
 
- } catch (error) {
-   console.error("? Error obteniendo inventario completo:", error);
-   res.status(500).json({
-     success: false,
-     error: "Error obteniendo inventario de dispositivos",
-     details: error.message
-   });
- }
+  } catch (error) {
+    console.error("❌ Error obteniendo inventario de dispositivos:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error obteniendo inventario de dispositivos",
+      details: error.message
+    });
+  }
 };
 
+// ========== EXPORTAR TODAS LAS FUNCIONES ==========
 module.exports = {
- getCompanyStats,
- getCriticalDevices,
- getAllCompanyDevices
+  getCompanyStats,
+  getCriticalDevices,
+  getAllCompanyDevices
 };

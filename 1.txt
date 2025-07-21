@@ -1,0 +1,195 @@
+🔍 DIAGNÓSTICO COMPLETO DE API WAZUH
+===================================
+1. OBTENIENDO TOKEN DE WAZUH...
+✅ Token obtenido: eyJhbGciOiJFUzUxMiIs...
+
+2. LISTANDO AGENTES DISPONIBLES...
+📊 Total de agentes encontrados: 8
+
+Agente 1:
+  ID: 000
+  Nombre: ubuntu
+  IP: 127.0.0.1
+  Estado: active
+  Grupo: []
+  Versión: Wazuh v4.12.0
+
+Agente 2:
+  ID: 001
+  Nombre: pc-axafone-pablo
+  IP: 192.168.100.245
+  Estado: active
+  Grupo: ['zs_axafone_tel_001']
+  Versión: Wazuh v4.12.0
+
+Agente 3:
+  ID: 002
+  Nombre: V749SUP
+  IP: 192.168.100.19
+  Estado: active
+  Grupo: ['zs_axafone_tel_001']
+  Versión: Wazuh v4.12.0
+
+Agente 4:
+  ID: 003
+  Nombre: UHD06TQ
+  IP: 192.168.100.18
+  Estado: active
+  Grupo: ['zs_axafone_tel_001']
+  Versión: Wazuh v4.12.0
+
+Agente 5:
+  ID: 004
+  Nombre: pc-axafone-teo
+  IP: 192.168.100.85
+  Estado: disconnected
+  Grupo: ['zs_axafone_tel_001']
+  Versión: Wazuh v4.12.0
+
+... y 3 más
+3. OBTENIENDO PRIMER AGENTE ACTIVO PARA PRUEBAS...
+✅ Usando agente ID: 000
+
+4. PROBANDO ENDPOINT DE SISTEMA OPERATIVO...
+   URL: /syscollector/000/os
+📊 Respuesta completa de OS:
+{
+  "data": {
+    "affected_items": [
+      {
+        "os": {
+          "codename": "noble",
+          "major": "24",
+          "minor": "04",
+          "name": "Ubuntu",
+          "platform": "ubuntu",
+          "version": "24.04.2 LTS (Noble Numbat)"
+        },
+        "scan": {
+          "id": 0,
+          "time": "2025-07-21T14:10:49+00:00"
+        },
+        "version": "#67-Ubuntu SMP PREEMPT_DYNAMIC Sun Jun 15 20:23:31 UTC 2025",
+        "hostname": "ubuntu",
+        "sysname": "Linux",
+        "release": "6.8.0-64-generic",
+        "architecture": "x86_64",
+        "agent_id": "000"
+      }
+    ],
+    "total_affected_items": 1,
+    "total_failed_items": 0,
+    "failed_items": []
+  },
+  "message": "All specified syscollector information was returned",
+  "error": 0
+}
+
+🖥️ INFORMACIÓN DE OS EXTRAÍDA:
+  - os_name: N/A
+  - os_version: N/A
+  - platform: N/A
+  - architecture: x86_64
+  - name: N/A
+  - version: #67-Ubuntu SMP PREEMPT_DYNAMIC Sun Jun 15 20:23:31 UTC 2025
+
+📋 TODOS LOS CAMPOS DISPONIBLES:
+  - agent_id: 000
+  - architecture: x86_64
+  - hostname: ubuntu
+  - os: {'codename': 'noble', 'major': '24', 'minor': '04', 'name': 'Ubuntu', 'platform': 'ubuntu', 'version': '24.04.2 LTS (Noble Numbat)'}
+  - release: 6.8.0-64-generic
+  - scan: {'id': 0, 'time': '2025-07-21T14:10:49+00:00'}
+  - sysname: Linux
+  - version: #67-Ubuntu SMP PREEMPT_DYNAMIC Sun Jun 15 20:23:31 UTC 2025
+
+5. PROBANDO ENDPOINT DE HARDWARE...
+   URL: /syscollector/000/hardware
+📊 Respuesta completa de Hardware:
+{
+  "data": {
+    "affected_items": [
+      {
+        "cpu": {
+          "cores": 4,
+          "mhz": 1997,
+          "name": "AMD EPYC-Milan Processor"
+        },
+        "ram": {
+          "free": 3774024,
+          "total": 8083692,
+          "usage": 54
+        },
+        "scan": {
+          "id": 0,
+          "time": "2025-07-21T14:10:49+00:00"
+        },
+        "board_serial": " ",
+        "agent_id": "000"
+      }
+    ],
+    "total_affected_items": 1,
+    "total_failed_items": 0,
+    "failed_items": []
+  },
+  "message": "All specified syscollector information was returned",
+  "error": 0
+}
+
+🔧 INFORMACIÓN DE HARDWARE EXTRAÍDA:
+  - ram_total: N/A
+  - cpu_name: N/A
+  - cpu_cores: N/A
+
+📋 TODOS LOS CAMPOS DISPONIBLES:
+  - agent_id: 000
+  - board_serial:  
+  - cpu: {'cores': 4, 'mhz': 1997, 'name': 'AMD EPYC-Milan Processor'}
+  - ram: {'free': 3774024, 'total': 8083692, 'usage': 54}
+  - scan: {'id': 0, 'time': '2025-07-21T14:10:49+00:00'}
+
+6. PROBANDO ENDPOINT DE PAQUETES (muestra de 5)...
+   URL: /syscollector/000/packages?limit=5
+📦 Encontrados paquetes: 5
+
+Paquete 1:
+  - name: ucf
+  - version: 3.0043+nmu1
+  - architecture: all
+  - size: 219136
+
+Paquete 2:
+  - name: pinentry-curses
+  - version: 1.2.1-3ubuntu5
+  - architecture: amd64
+  - size: 91136
+
+Paquete 3:
+  - name: rsyslog
+  - version: 8.2312.0-3ubuntu9.1
+  - architecture: amd64
+  - size: 1817600
+
+
+7. PROBANDO OTROS ENDPOINTS DISPONIBLES...
+   Probando: /syscollector/000/processes
+   ✅ processes: Disponible
+   Probando: /syscollector/000/ports
+   ✅ ports: Disponible
+   Probando: /syscollector/000/netstat
+   ❌ netstat: No disponible (HTTP 404)
+   Probando: /syscollector/000/netaddr
+   ✅ netaddr: Disponible
+
+✅ DIAGNÓSTICO COMPLETADO
+========================
+
+💡 RESUMEN PARA IMPLEMENTAR:
+==============================
+1. Usa los campos correctos que aparecen arriba para OS y Hardware
+2. Ajusta la función getAllCompanyDevices con los campos reales
+3. Los endpoints que funcionan puedes usarlos para más información
+
+🔧 SIGUIENTE PASO:
+==================
+Crea una función de extracción usando los campos reales mostrados arriba
