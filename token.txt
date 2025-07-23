@@ -1,0 +1,44 @@
+🔍 DIAGNÓSTICO DEL AGENTE 001
+=====================================
+1️⃣ Obteniendo token...
+✅ Token obtenido: eyJhbGciOiJFUzUxMiIs...
+
+2️⃣ Consultando información del agente 001...
+📋 Respuesta completa de la API:
+{
+  "title": "Not Found",
+  "detail": "404: Not Found"
+}
+
+3️⃣ Extrayendo campos específicos...
+Status: NO_ENCONTRADO
+Name: NO_ENCONTRADO
+IP: NO_ENCONTRADO
+OS: NO_ENCONTRADO
+Last Keep Alive: NO_ENCONTRADO
+
+4️⃣ Verificando todos los agentes activos...
+📊 Agentes activos encontrados:
+ID: 000 | ubuntu | 127.0.0.1 | active
+ID: 003 | UHD06TQ | 192.168.100.18 | active
+ID: 004 | pc-axafone-teo | 192.168.100.85 | active
+ID: 005 | pc-axafone-jcvalle | 192.168.100.133 | active
+ID: 006 | pc-axafone-kevin | 192.168.0.23 | active
+ID: 010 | UbuntuProxmox | 192.168.0.41 | active
+
+5️⃣ Verificando si el agente 001 específicamente existe...
+❌ Agente 001 NO encontrado en la lista de agentes activos
+🔍 Verifica que el agente Windows esté conectado correctamente
+
+📋 RESUMEN DEL DIAGNÓSTICO:
+==========================
+• API funcionando: ✅
+• Token válido: ✅
+• Agente 001 existe: ❌
+
+🔧 PASOS DE TROUBLESHOOTING:
+===========================
+1. Verificar que el servicio Wazuh esté ejecutándose en el PC Windows
+2. Revisar conectividad de red entre el agente y el manager
+3. Verificar logs en el agente Windows
+4. Comprobar configuración del agente

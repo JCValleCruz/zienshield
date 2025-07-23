@@ -21,8 +21,10 @@ export interface SystemMetrics {
   };
   network: {
     interface: string;
-    rx: number;
-    tx: number;
+    rx: number; // Transferencia actual de descarga en MB/s
+    tx: number; // Transferencia actual de subida en MB/s
+    rxBytes: number; // Total bytes descargados
+    txBytes: number; // Total bytes subidos
     speed: string;
   };
   events: {
@@ -60,16 +62,41 @@ interface GlobalStatsResponse {
   error?: string;
 }
 
-// Interface para métricas reales del servidor
+// Interface para métricas reales del servidor (actualizada)
 interface ServerMetricsResponse {
   success: boolean;
   data: {
+    cpu: {
+      usage: number;
+      cores: number;
+      model: string;
+    };
+    memory: {
+      total: number;
+      used: number;
+      free: number;
+      usage: number;
+    };
+    disk: {
+      total: number;
+      used: number;
+      free: number;
+      usage: number;
+      freeGB: number;
+    };
+    network: {
+      interface: string;
+      rx: number; // Transferencia actual descarga
+      tx: number; // Transferencia actual subida
+      rxBytes: number; // Total bytes descargados
+      txBytes: number; // Total bytes subidos
+      speed: string;
+    };
     uptime: {
       seconds: number;
       formatted: string;
     };
     loadAverage: number[];
-    cpuCores: number;
     status: string;
     timestamp: string;
   };
@@ -116,8 +143,8 @@ export const useSystemMetrics = () => {
     }
   };
 
-  // NUEVA: Función para obtener métricas reales del servidor
-  const fetchRealServerData = async (): Promise<{ uptime: number; loadAverage: number[]; cores: number } | null> => {
+  // Función para obtener métricas reales del servidor (actualizada)
+  const fetchRealServerData = async (): Promise<SystemMetrics | null> => {
     try {
       console.log('🖥️ Obteniendo métricas reales del servidor desde /api/system/server-metrics...');
       
@@ -130,16 +157,30 @@ export const useSystemMetrics = () => {
       const result: ServerMetricsResponse = await response.json();
       
       if (result.success && result.data) {
-        console.log('✅ Métricas del servidor obtenidas:', {
+        console.log('✅ Métricas completas del servidor obtenidas:', {
+          cpu: `${result.data.cpu.usage}%`,
+          memory: `${result.data.memory.usage}%`,
+          disk: `${result.data.disk.usage}%`,
           uptime: result.data.uptime.formatted,
-          loadAverage: result.data.loadAverage[0],
-          cores: result.data.cpuCores
+          network: result.data.network.interface
         });
         
+        // Retornar directamente los datos en formato SystemMetrics
         return {
+          cpu: result.data.cpu,
+          memory: result.data.memory,
+          disk: result.data.disk,
+          network: {
+            ...result.data.network,
+            rxBytes: result.data.network.rxBytes || 0,
+            txBytes: result.data.network.txBytes || 0
+          },
+          events: {
+            perSecond: 0, // Se llenará con eventos reales
+            total: 0
+          },
           uptime: result.data.uptime.seconds,
-          loadAverage: result.data.loadAverage,
-          cores: result.data.cpuCores
+          loadAverage: result.data.loadAverage
         };
       }
       
@@ -158,66 +199,79 @@ export const useSystemMetrics = () => {
       // Obtener eventos reales del backend
       const realEvents = await fetchRealEventsData();
       
-      // NUEVO: Obtener métricas reales del servidor
+      // Obtener métricas reales completas del servidor
       const realServerData = await fetchRealServerData();
       
-      // Generar métricas simuladas para el resto del sistema
-      const mockData: SystemMetrics = {
-        cpu: {
-          usage: Math.floor(Math.random() * 40) + 20, // 20-60%
-          cores: realServerData?.cores || 4,
-          model: 'Intel Xeon E5-2673 v4'
-        },
-        memory: {
-          total: 8192, // 8GB
-          used: Math.floor(Math.random() * 3000) + 2000, // 2-5GB
-          free: 0,
-          usage: 0
-        },
-        disk: {
-          total: 80000, // 80GB
-          used: Math.floor(Math.random() * 20000) + 30000, // 30-50GB
-          free: 0,
-          usage: 0,
-          freeGB: 0
-        },
-        network: {
-          interface: 'eth0',
-          rx: Math.floor(Math.random() * 1000) + 500,
-          tx: Math.floor(Math.random() * 500) + 200,
-          speed: '1Gbps'
-        },
-        events: realEvents || {
-          perSecond: Math.floor(Math.random() * 50) + 10, // Fallback simulado
-          total: Math.floor(Math.random() * 100000) + 50000
-        },
-        uptime: realServerData?.uptime || (86400 * 15), // Usar datos reales o fallback
-        loadAverage: realServerData?.loadAverage || [
-          Math.random() * 2,
-          Math.random() * 2,
-          Math.random() * 2
-        ]
-      };
-
-      // Calcular campos derivados
-      mockData.memory.free = mockData.memory.total - mockData.memory.used;
-      mockData.memory.usage = Math.round((mockData.memory.used / mockData.memory.total) * 100);
+      let finalMetrics: SystemMetrics;
       
-      mockData.disk.free = mockData.disk.total - mockData.disk.used;
-      mockData.disk.usage = Math.round((mockData.disk.used / mockData.disk.total) * 100);
-      mockData.disk.freeGB = Math.round(mockData.disk.free / 1024);
+      if (realServerData) {
+        // Usar datos reales del servidor + eventos reales
+        finalMetrics = {
+          ...realServerData,
+          events: realEvents || {
+            perSecond: Math.floor(Math.random() * 50) + 10,
+            total: Math.floor(Math.random() * 100000) + 50000
+          }
+        };
+        
+        console.log('✅ Usando métricas REALES del servidor:', {
+          cpu: `${finalMetrics.cpu.usage}%`,
+          memory: `${finalMetrics.memory.usage}%`,
+          disk: `${finalMetrics.disk.usage}%`,
+          network: finalMetrics.network.interface,
+          events: realEvents ? 'Real (Wazuh)' : 'Simulado'
+        });
+        
+      } else {
+        // Fallback a datos simulados si no hay datos reales disponibles
+        finalMetrics = {
+          cpu: {
+            usage: Math.floor(Math.random() * 40) + 20,
+            cores: 4,
+            model: 'Intel Xeon E5-2673 v4'
+          },
+          memory: {
+            total: 8192,
+            used: Math.floor(Math.random() * 3000) + 2000,
+            free: 0,
+            usage: 0
+          },
+          disk: {
+            total: 80000,
+            used: Math.floor(Math.random() * 20000) + 30000,
+            free: 0,
+            usage: 0,
+            freeGB: 0
+          },
+          network: {
+            interface: 'eth0',
+            rx: Math.floor(Math.random() * 50) + 5, // Transferencia actual descarga MB/s
+            tx: Math.floor(Math.random() * 25) + 2, // Transferencia actual subida MB/s
+            rxBytes: Math.floor(Math.random() * 1000000) + 500000, // Total bytes descargados
+            txBytes: Math.floor(Math.random() * 500000) + 200000,  // Total bytes subidos
+            speed: '1Gbps'
+          },
+          events: realEvents || {
+            perSecond: Math.floor(Math.random() * 50) + 10,
+            total: Math.floor(Math.random() * 100000) + 50000
+          },
+          uptime: 86400 * 15,
+          loadAverage: [Math.random() * 2, Math.random() * 2, Math.random() * 2]
+        };
 
-      setMetrics(mockData);
+        // Calcular campos derivados para datos simulados
+        finalMetrics.memory.free = finalMetrics.memory.total - finalMetrics.memory.used;
+        finalMetrics.memory.usage = Math.round((finalMetrics.memory.used / finalMetrics.memory.total) * 100);
+        
+        finalMetrics.disk.free = finalMetrics.disk.total - finalMetrics.disk.used;
+        finalMetrics.disk.usage = Math.round((finalMetrics.disk.used / finalMetrics.disk.total) * 100);
+        finalMetrics.disk.freeGB = Math.round(finalMetrics.disk.free / 1024);
+        
+        console.log('⚠️ Usando métricas SIMULADAS (servidor no disponible)');
+      }
+
+      setMetrics(finalMetrics);
       setLastUpdate(new Date());
-      
-      console.log('✅ Métricas del sistema actualizadas:', {
-        eventsPerSecond: mockData.events.perSecond,
-        eventsSource: realEvents ? 'Real (Wazuh)' : 'Simulado',
-        uptime: realServerData ? `Real (${Math.floor(mockData.uptime/3600)}h)` : 'Simulado',
-        loadAverage: realServerData ? `Real (${mockData.loadAverage[0]})` : 'Simulado',
-        cpu: mockData.cpu.usage,
-        memory: mockData.memory.usage
-      });
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';

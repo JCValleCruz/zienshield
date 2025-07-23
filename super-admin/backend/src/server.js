@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Middleware de seguridad
 app.use(helmet({
@@ -15,14 +15,18 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por ventana
+  max: 500, // máximo 500 requests por ventana
   message: 'Demasiadas solicitudes desde esta IP'
 });
 app.use('/api', limiter);
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://194.164.172.92:3000',
+    'http://localhost:3000'
+  ],
   credentials: true
 }));
 

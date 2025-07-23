@@ -124,13 +124,6 @@ export default function Login({ onLogin }: LoginProps) {
             )}
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-slate-700/50 rounded-xl border border-slate-600/50">
-            <p className="text-slate-400 text-xs text-center mb-2">Credenciales de demostración:</p>
-            <p className="text-slate-300 text-sm text-center font-mono">
-              admin@zienshield.com / ZienAdmin2025
-            </p>
-          </div>
         </div>
 
         {/* Footer */}

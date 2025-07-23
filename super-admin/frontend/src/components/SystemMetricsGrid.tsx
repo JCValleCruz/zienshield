@@ -158,33 +158,78 @@ const SystemMetricsGrid: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. NETWORK INTERFACE */}
+        {/* 2. RED - Velocidad de descarga y subida actual */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="p-1.5 bg-cyan-500/10 rounded-lg mr-2">
-                <Network className="h-4 w-4 text-cyan-400" />
-              </div>
-              <h3 className="text-white font-medium text-sm">Red</h3>
+          <div className="flex items-center mb-3">
+            <div className="p-1.5 bg-cyan-500/10 rounded-lg mr-2">
+              <Network className="h-4 w-4 text-cyan-400" />
             </div>
+            <h3 className="text-white font-medium text-sm">Red</h3>
+            {isLoading && (
+              <div className="ml-auto animate-pulse h-1.5 w-1.5 bg-cyan-400 rounded-full"></div>
+            )}
           </div>
-          <div className="space-y-2">
-            <div className="text-lg font-bold text-cyan-400">
-              {metrics?.network.interface || 'eth0'}
+          
+          <div className="space-y-3">
+            {/* Interface y velocidad máxima */}
+            <div className="text-center">
+              <div className="text-sm font-bold text-cyan-400">
+                {metrics?.network.interface || 'eth0'}
+              </div>
+              <div className="text-xs text-slate-500">
+                {metrics?.network.speed || '1Gbps'}
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">↓ Descarga:</span>
-                <span className="text-green-400 font-medium">{metrics?.network.rx || 0} MB/s</span>
+
+            {/* Transferencia de descarga actual */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center">
+                  <div className="text-green-400 text-xs mr-1">↓</div>
+                  <span className="text-xs text-slate-400">Descarga</span>
+                </div>
+                <span className="text-xs font-semibold text-green-400">
+                  {(metrics?.network.rx || 0).toFixed(1)} MB/s
+                </span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">↑ Subida:</span>
-                <span className="text-blue-400 font-medium">{metrics?.network.tx || 0} MB/s</span>
+              <div className="w-full bg-slate-700 rounded-full h-1.5">
+                <div 
+                  className="h-1.5 rounded-full transition-all duration-500 bg-green-500"
+                  style={{ 
+                    width: `${Math.min(Math.max((metrics?.network.rx || 0) / 50 * 100, 2), 100)}%` 
+                  }}
+                ></div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Velocidad:</span>
-                <span className="text-slate-300">{metrics?.network.speed || '1Gbps'}</span>
+            </div>
+
+            {/* Transferencia de subida actual */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center">
+                  <div className="text-blue-400 text-xs mr-1">↑</div>
+                  <span className="text-xs text-slate-400">Subida</span>
+                </div>
+                <span className="text-xs font-semibold text-blue-400">
+                  {(metrics?.network.tx || 0).toFixed(1)} MB/s
+                </span>
               </div>
+              <div className="w-full bg-slate-700 rounded-full h-1.5">
+                <div 
+                  className="h-1.5 rounded-full transition-all duration-500 bg-blue-500"
+                  style={{ 
+                    width: `${Math.min(Math.max((metrics?.network.tx || 0) / 25 * 100, 2), 100)}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Estado de la conexión */}
+            <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center space-x-1">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400">Online</span>
+              </div>
+              <span className="text-slate-500">Tiempo real</span>
             </div>
           </div>
         </div>
