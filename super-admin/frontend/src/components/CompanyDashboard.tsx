@@ -177,6 +177,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
   const [dataTransition, setDataTransition] = useState(false);
   const [selectedVulnDevice, setSelectedVulnDevice] = useState('all');
   const [selectedFIMDevice, setSelectedFIMDevice] = useState('all');
+  const [selectedFIMUser, setSelectedFIMUser] = useState('all');
 
   // Configuración del sector basada en los datos del usuario
   const getSectorConfig = (sector: string) => {
@@ -1751,26 +1752,8 @@ useEffect(() => {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-sm text-gray-400">
-            Análisis de CVE y distribución CVSS
-          </div>
-          
-          {/* Selector de dispositivos */}
-          <div className="flex items-center space-x-4">
-            <label className="text-sm text-gray-300">Filtrar por equipo:</label>
-            <select 
-              value={selectedVulnDevice}
-              onChange={(e) => setSelectedVulnDevice(e.target.value)}
-              className="bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {deviceList.map(device => (
-                <option key={device.id} value={device.id}>
-                  {device.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="text-sm text-gray-400 mb-6">
+          Análisis de CVE y distribución CVSS
         </div>
 
         {/* Distribución CVSS */}
@@ -1798,6 +1781,37 @@ useEffect(() => {
               {Math.floor(Math.random() * 200) + 50}
             </div>
             <div className="text-green-300">Bajas (0.1-3.9)</div>
+          </div>
+        </div>
+
+        {/* Filtros y Búsqueda */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Selector de dispositivos */}
+            <div className="flex-1 min-w-64">
+              <label className="block text-sm text-gray-300 mb-2">Filtrar por equipo</label>
+              <select 
+                value={selectedVulnDevice}
+                onChange={(e) => setSelectedVulnDevice(e.target.value)}
+                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              >
+                {deviceList.map(device => (
+                  <option key={device.id} value={device.id}>
+                    {device.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Botón Aplicar Filtros */}
+            <div className="flex items-end">
+              <button
+                onClick={() => {/* Trigger filter application */}}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1983,9 +1997,21 @@ useEffect(() => {
       }
     ];
 
-    const filteredChanges = selectedFIMDevice === 'all' 
-      ? fileChanges 
-      : fileChanges.filter(change => change.device === selectedFIMDevice);
+    // Lista de usuarios únicos para el filtro
+    const userList = [
+      { id: 'all', name: 'Todos los usuarios' },
+      ...Array.from(new Set(fileChanges.map(change => change.user))).map(user => ({
+        id: user,
+        name: user
+      }))
+    ];
+
+    // Filtrar por dispositivo y usuario
+    const filteredChanges = fileChanges.filter(change => {
+      const deviceMatch = selectedFIMDevice === 'all' || change.device === selectedFIMDevice;
+      const userMatch = selectedFIMUser === 'all' || change.user === selectedFIMUser;
+      return deviceMatch && userMatch;
+    });
 
     const getChangeColor = (type: string) => {
       switch(type) {
@@ -2009,26 +2035,8 @@ useEffect(() => {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-sm text-gray-400">
-            Monitoreo FIM (File Integrity Monitoring)
-          </div>
-          
-          {/* Selector de dispositivos */}
-          <div className="flex items-center space-x-4">
-            <label className="text-sm text-gray-300">Filtrar por equipo:</label>
-            <select 
-              value={selectedFIMDevice}
-              onChange={(e) => setSelectedFIMDevice(e.target.value)}
-              className="bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {fimDeviceList.map(device => (
-                <option key={device.id} value={device.id}>
-                  {device.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="text-sm text-gray-400 mb-6">
+          Monitoreo FIM (File Integrity Monitoring)
         </div>
 
         {/* KPIs de Integridad */}
@@ -2053,13 +2061,64 @@ useEffect(() => {
           />
         </div>
 
+        {/* Filtros y Búsqueda */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Selector de dispositivos */}
+            <div className="flex-1 min-w-64">
+              <label className="block text-sm text-gray-300 mb-2">Filtrar por equipo</label>
+              <select 
+                value={selectedFIMDevice}
+                onChange={(e) => setSelectedFIMDevice(e.target.value)}
+                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              >
+                {fimDeviceList.map(device => (
+                  <option key={device.id} value={device.id}>
+                    {device.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Selector de usuarios */}
+            <div className="flex-1 min-w-48">
+              <label className="block text-sm text-gray-300 mb-2">Filtrar por usuario</label>
+              <select 
+                value={selectedFIMUser}
+                onChange={(e) => setSelectedFIMUser(e.target.value)}
+                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              >
+                {userList.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Botón Aplicar Filtros */}
+            <div className="flex items-end">
+              <button
+                onClick={() => {/* Trigger filter application */}}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Cambios Recientes */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <h3 className="text-lg font-semibold text-white mb-4">
             Cambios de Archivos Recientes 
-            {selectedFIMDevice !== 'all' && (
+            {(selectedFIMDevice !== 'all' || selectedFIMUser !== 'all') && (
               <span className="text-blue-400 ml-2">
-                ({fimDeviceList.find(d => d.id === selectedFIMDevice)?.name})
+                (
+                {selectedFIMDevice !== 'all' && fimDeviceList.find(d => d.id === selectedFIMDevice)?.name.split(' ')[0]}
+                {selectedFIMDevice !== 'all' && selectedFIMUser !== 'all' && ' - '}
+                {selectedFIMUser !== 'all' && `Usuario: ${selectedFIMUser}`}
+                )
               </span>
             )}
           </h3>
@@ -2092,7 +2151,9 @@ useEffect(() => {
                             {deviceInfo ? deviceInfo.name.split(' ')[0] : change.device}
                           </span>
                         )}
-                        <span>Usuario: <span className="text-gray-300">{change.user}</span></span>
+                        {selectedFIMUser === 'all' && (
+                          <span>Usuario: <span className="text-gray-300">{change.user}</span></span>
+                        )}
                       </div>
                       <div className="text-gray-500">
                         {new Date(change.timestamp).toLocaleString('es-ES', {
