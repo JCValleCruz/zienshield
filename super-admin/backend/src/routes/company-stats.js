@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { getCompanyStats, getCriticalDevices, getAllCompanyDevices } = require('../controllers/company-stats');
+const { getCompanyStats, getCriticalDevices, getAllCompanyDevices, searchCVEInIncibe } = require('../controllers/company-stats');
 
 // Ruta para obtener estadísticas específicas de una empresa
 // GET /api/company/:tenantId/stats
@@ -25,5 +25,10 @@ router.get('/:tenantId/devices/critical', getCriticalDevices);
 // - sortOrder: asc o desc
 // - status: filtrar por estado (all, active, disconnected, pending)
 router.get('/:tenantId/devices', getAllCompanyDevices);
+
+// NUEVA RUTA: Buscar CVE específico en INCIBE
+// GET /api/company/:tenantId/cve/:cve/incibe
+// Busca un CVE en la base de datos de INCIBE y devuelve la URL específica
+router.get('/:tenantId/cve/:cve/incibe', searchCVEInIncibe);
 
 module.exports = router;

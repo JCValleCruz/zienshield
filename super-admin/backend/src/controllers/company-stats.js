@@ -1018,9 +1018,116 @@ const getAllCompanyDevices = async (req, res) => {
   }
 };
 
+// ========== FUNCIÓN PARA BUSCAR CVE EN INCIBE ==========
+const searchCVEInIncibe = async (req, res) => {
+  try {
+    const { cve } = req.params;
+    
+    if (!cve || !cve.match(/^CVE-\d{4}-\d+$/)) {
+      return res.status(400).json({
+        success: false,
+        error: "Formato de CVE inválido. Debe ser CVE-YYYY-NNNN"
+      });
+    }
+
+    console.log(`🔍 Buscando CVE ${cve} en INCIBE...`);
+
+    // Realizar búsqueda en INCIBE usando web scraping
+    const cheerio = require('cheerio');
+    const searchUrl = 'https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades';
+    
+    // Simular una búsqueda POST al formulario de INCIBE
+    const formData = new URLSearchParams();
+    formData.append('field_vulnerability_title_es', cve);
+    
+    const response = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      // Si el POST falla, intentar con GET y parámetros de búsqueda
+      const getUrl = `${searchUrl}?field_vulnerability_title_es=${encodeURIComponent(cve)}`;
+      const getResponse = await fetch(getUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (getResponse.ok) {
+        const html = await getResponse.text();
+        const $ = cheerio.load(html);
+        
+        // Buscar el elemento que contiene el CVE
+        const cveElement = $(`h2.node-title:contains("${cve}")`).first();
+        
+        if (cveElement.length > 0) {
+          // Intentar encontrar el enlace del artículo
+          const articleLink = cveElement.closest('article').find('a').first();
+          let resultUrl = searchUrl;
+          
+          if (articleLink.length > 0) {
+            const href = articleLink.attr('href');
+            if (href) {
+              resultUrl = href.startsWith('http') ? href : `https://www.incibe.es${href}`;
+            }
+          }
+          
+          return res.json({
+            success: true,
+            data: {
+              cve: cve,
+              found: true,
+              url: resultUrl,
+              title: cveElement.text().trim(),
+              searchUrl: getUrl
+            }
+          });
+        }
+      }
+    }
+
+    // Si no se encuentra, devolver URL de búsqueda general
+    const fallbackUrl = `${searchUrl}?field_vulnerability_title_es=${encodeURIComponent(cve)}`;
+    
+    res.json({
+      success: true,
+      data: {
+        cve: cve,
+        found: false,
+        url: fallbackUrl,
+        message: `CVE ${cve} no encontrado en INCIBE. Redirigiendo a búsqueda general.`,
+        searchUrl: fallbackUrl
+      }
+    });
+
+  } catch (error) {
+    console.error(`❌ Error buscando CVE ${req.params.cve}:`, error);
+    
+    // Fallback: devolver URL de búsqueda manual
+    const fallbackUrl = `https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades?field_vulnerability_title_es=${encodeURIComponent(req.params.cve || '')}`;
+    
+    res.json({
+      success: true,
+      data: {
+        cve: req.params.cve,
+        found: false,
+        url: fallbackUrl,
+        error: "Error en la búsqueda automática. Redirigiendo a búsqueda manual.",
+        searchUrl: fallbackUrl
+      }
+    });
+  }
+};
+
 // ========== EXPORTAR TODAS LAS FUNCIONES ==========
 module.exports = {
   getCompanyStats,
   getCriticalDevices,
-  getAllCompanyDevices
+  getAllCompanyDevices,
+  searchCVEInIncibe
 };
