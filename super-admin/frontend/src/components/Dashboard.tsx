@@ -153,6 +153,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           {
             id: 1,
             name: 'Axafone Telecom',
+            company_name: 'Axafone Telecom',
             sector: 'TELECOM',
             tenant_id: 'axafone-telecom-001',
             admin_name: 'Juan Pérez',
@@ -163,6 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           {
             id: 2,
             name: 'Bufete Legal Madrid',
+            company_name: 'Bufete Legal Madrid',
             sector: 'LEGAL',
             tenant_id: 'legal-madrid-002',
             admin_name: 'María González',
@@ -209,7 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     // Usar datos disponibles directamente sin hacer petición adicional
     // ya que el backend no tiene GET /companies/:id
     setFormData({
-      name: company.name || '',
+      name: company.company_name || company.name || '',
       sector: company.sector || '',
       admin_name: company.admin_name || '',
       admin_phone: company.admin_phone || '', // Usar el campo si está disponible
@@ -484,6 +486,45 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     return (company as any).wazuh_group || null;
   };
 
+  // NUEVA: Función para manejar "Ver Dashboard" de empresa
+  const handleViewCompanyDashboard = async (company: Company) => {
+    try {
+      console.log('🎭 Iniciando impersonación para empresa:', company.company_name || company.name);
+      
+      // 1. Llamar al endpoint de impersonación
+      const response = await apiService.impersonateCompany(company.tenant_id);
+      
+      if (response.success) {
+        console.log('✅ Token de impersonación obtenido:', response.data.token);
+        
+        // 2. Construir URL con token de impersonación para nueva pestaña
+        const baseUrl = window.location.origin; // http://localhost:3000 o la URL actual
+        const impersonationUrl = `${baseUrl}?impersonate=${response.data.token}`;
+        
+        console.log('🔗 Abriendo dashboard de empresa en:', impersonationUrl);
+        
+        // 3. Abrir nueva pestaña con el dashboard de empresa
+        const newWindow = window.open(impersonationUrl, '_blank', 'noopener,noreferrer');
+        
+        if (!newWindow) {
+          alert('⚠️ No se pudo abrir la nueva pestaña. Por favor, permite las ventanas emergentes y vuelve a intentarlo.');
+        } else {
+          console.log('✅ Dashboard de empresa abierto en nueva pestaña');
+          
+          // 4. Mostrar notificación de éxito
+          alert(`✅ Dashboard de "${company.company_name || company.name}" abierto en nueva pestaña`);
+        }
+        
+      } else {
+        throw new Error(response.error || 'Error desconocido en impersonación');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error en impersonación:', error);
+      alert(`❌ Error al acceder al dashboard de ${company.company_name || company.name}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -730,7 +771,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <div key={company.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-1">{company.name}</h3>
+                        <h3 className="text-lg font-semibold text-white mb-1">{company.company_name || company.name}</h3>
                         <p className="text-sm text-slate-400">{company.admin_name}</p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -741,7 +782,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                           onClick={() => handleDeleteCompany(company)}
                           className="p-1 text-red-400 hover:text-red-300 hover
 			hover:bg-red-500/10 rounded transition-colors"
-                         title={`Eliminar ${company.name}`}
+                         title={`Eliminar ${company.company_name || company.name}`}
                        >
                          <Trash2 className="h-4 w-4" />
                        </button>
@@ -772,8 +813,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                    </div>
                    
                    <div className="mt-4 flex space-x-2">
-                     <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded text-sm transition-colors">
-                       Ver Dashboard
+                     <button 
+                       onClick={() => handleViewCompanyDashboard(company)}
+                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded text-sm transition-colors flex items-center justify-center space-x-1"
+                       title={`Abrir dashboard de ${company.company_name || company.name} en nueva pestaña`}
+                     >
+                       <Monitor className="h-3 w-3" />
+                       <span>Ver Dashboard</span>
                      </button>
                      <button 
                        onClick={() => handleEditCompany(company)}

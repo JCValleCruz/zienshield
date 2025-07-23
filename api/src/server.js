@@ -508,6 +508,184 @@ app.get('/api/sync/wazuh/groups', async (req, res) => {
   }
 });
 
+// ==== ENDPOINTS DE AUTENTICACIÓN E IMPERSONACIÓN ====
+
+// POST /api/auth/impersonate/:tenantId - Impersonación de empresa por super admin
+app.post('/api/auth/impersonate/:tenantId', async (req, res) => {
+  const { tenantId } = req.params;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
+  
+  try {
+    console.log('🎭 Intento de impersonación para tenant:', tenantId);
+    
+    // 1. Verificar que quien hace la petición es super admin
+    if (token !== 'demo-token-super-admin') {
+      console.log('❌ Acceso denegado: no es super admin');
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acceso denegado: Se requieren permisos de super administrador' 
+      });
+    }
+    
+    // 2. Buscar la empresa por tenant_id
+    const companyQuery = `
+      SELECT 
+        id,
+        name as company_name,
+        admin_email,
+        tenant_id,
+        sector,
+        wazuh_group,
+        created_at
+      FROM companies 
+      WHERE tenant_id = $1
+    `;
+    
+    const result = await pool.query(companyQuery, [tenantId]);
+    
+    if (result.rows.length === 0) {
+      console.log('❌ Empresa no encontrada:', tenantId);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Empresa no encontrada' 
+      });
+    }
+    
+    const company = result.rows[0];
+    console.log('✅ Impersonación exitosa para empresa:', company.company_name);
+    
+    // 3. Generar token temporal de impersonación (válido por 30 minutos)
+    const impersonationToken = `impersonate-${company.tenant_id}-${Date.now()}`;
+    
+    // 4. Registrar la acción de impersonación para auditoría
+    console.log('📝 LOG DE IMPERSONACIÓN:', {
+      timestamp: new Date().toISOString(),
+      super_admin_action: 'IMPERSONATE_COMPANY',
+      target_tenant_id: tenantId,
+      target_company: company.company_name,
+      impersonation_token: impersonationToken
+    });
+    
+    // 5. Retornar datos completos de la empresa
+    return res.json({ 
+      success: true, 
+      token: impersonationToken,
+      user: {
+        email: company.admin_email,
+        role: 'company_admin',
+        name: company.company_name,
+        tenant_id: company.tenant_id,
+        company_name: company.company_name,
+        company_id: company.id,
+        sector: company.sector,
+        wazuh_group: company.wazuh_group,
+        is_impersonated: true // Flag para identificar sesión de impersonación
+      },
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutos
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en impersonación:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor durante impersonación' 
+    });
+  }
+});
+
+// GET /api/auth/auto-login/:token - Auto-login con token de impersonación
+app.get('/api/auth/auto-login/:token', async (req, res) => {
+  const { token } = req.params;
+  
+  try {
+    console.log('🔗 Intento de auto-login con token:', token);
+    
+    // Verificar que sea un token de impersonación válido
+    if (!token.startsWith('impersonate-')) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Token de impersonación inválido' 
+      });
+    }
+    
+    // Extraer tenant_id y timestamp del token
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 3) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Formato de token inválido' 
+      });
+    }
+    
+    const tenantId = tokenParts[1];
+    const timestamp = parseInt(tokenParts[2]);
+    
+    // Verificar que el token no haya expirado (30 minutos)
+    const tokenAge = Date.now() - timestamp;
+    const maxAge = 30 * 60 * 1000; // 30 minutos
+    
+    if (tokenAge > maxAge) {
+      console.log('❌ Token de impersonación expirado');
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Token de impersonación expirado' 
+      });
+    }
+    
+    // Buscar la empresa
+    const companyQuery = `
+      SELECT 
+        id,
+        name as company_name,
+        admin_email,
+        tenant_id,
+        sector,
+        wazuh_group
+      FROM companies 
+      WHERE tenant_id = $1
+    `;
+    
+    const result = await pool.query(companyQuery, [tenantId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Empresa no encontrada para impersonación' 
+      });
+    }
+    
+    const company = result.rows[0];
+    console.log('✅ Auto-login exitoso para empresa:', company.company_name);
+    
+    // Generar token de sesión normal para la empresa
+    const sessionToken = `company-token-${company.tenant_id}`;
+    
+    return res.json({ 
+      success: true, 
+      token: sessionToken,
+      user: {
+        email: company.admin_email,
+        role: 'company_admin',
+        name: company.company_name,
+        tenant_id: company.tenant_id,
+        company_name: company.company_name,
+        company_id: company.id,
+        sector: company.sector,
+        wazuh_group: company.wazuh_group,
+        is_impersonated: true
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en auto-login:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor durante auto-login' 
+    });
+  }
+});
+
 // Iniciar servidor
 app.listen(PORT, async () => {
   console.log('🚀 ZienSHIELD API iniciando...');

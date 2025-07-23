@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import CompanyDashboard from './components/CompanyDashboard';
-import Login from './components/Login'
+import Login from './components/Login';
+import { apiService } from './services/api';
 
 interface User {
   id: string;
@@ -25,23 +26,82 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar si hay sesión guardada al cargar la app
+  // Verificar si hay sesión guardada o token de impersonación al cargar la app
   useEffect(() => {
-    const savedUser = localStorage.getItem('zienshield-user');
-    const savedToken = localStorage.getItem('zienshield-token');
-    
-    if (savedUser && savedToken) {
+    const checkAuthAndImpersonation = async () => {
       try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        console.log('✅ Sesión restaurada:', userData);
-      } catch (error) {
-        console.error('❌ Error parsing saved user:', error);
-        localStorage.removeItem('zienshield-user');
-        localStorage.removeItem('zienshield-token');
+        console.log('🔍 Iniciando verificación de autenticación...');
+        console.log('🌐 URL actual:', window.location.href);
+        console.log('🔗 Search params:', window.location.search);
+        
+        // 1. Verificar si hay token de impersonación en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const impersonateToken = urlParams.get('impersonate');
+        
+        console.log('🎭 Token de impersonación en URL:', impersonateToken);
+        
+        if (impersonateToken) {
+          console.log('✅ Token de impersonación detectado, iniciando auto-login...');
+          
+          try {
+            // Intentar auto-login con token de impersonación
+            const response = await apiService.autoLogin(impersonateToken);
+            
+            if (response.success && response.data.user) {
+              const user: User = {
+                id: Date.now().toString(),
+                email: response.data.user.email,
+                role: response.data.user.role,
+                name: response.data.user.name,
+                tenant_id: response.data.user.tenant_id,
+                company_name: response.data.user.company_name,
+                company_id: response.data.user.company_id,
+                sector: response.data.user.sector,
+                wazuh_group: response.data.user.wazuh_group
+              };
+
+              setUser(user);
+              
+              // Guardar token de sesión (no el de impersonación)
+              localStorage.setItem('zienshield-user', JSON.stringify(user));
+              localStorage.setItem('zienshield-token', response.data.token);
+              
+              console.log('✅ Auto-login por impersonación exitoso:', user);
+              
+              // Limpiar URL (opcional, para que no se vea el token)
+              window.history.replaceState({}, document.title, window.location.pathname);
+              
+              setIsLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error('❌ Error en auto-login de impersonación:', error);
+            // Continuar con verificación de sesión normal
+          }
+        }
+        
+        // 2. Verificar sesión guardada normal
+        const savedUser = localStorage.getItem('zienshield-user');
+        const savedToken = localStorage.getItem('zienshield-token');
+        
+        if (savedUser && savedToken) {
+          try {
+            const userData = JSON.parse(savedUser);
+            setUser(userData);
+            console.log('✅ Sesión restaurada:', userData);
+          } catch (error) {
+            console.error('❌ Error parsing saved user:', error);
+            localStorage.removeItem('zienshield-user');
+            localStorage.removeItem('zienshield-token');
+          }
+        }
+        
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    checkAuthAndImpersonation();
   }, []);
 
   // Función de login actualizada para usar API

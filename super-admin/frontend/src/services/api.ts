@@ -1,9 +1,11 @@
 // src/services/api.ts
 const API_BASE_URL = 'http://194.164.172.92:3001/api';
+const SUPER_ADMIN_API_URL = 'http://194.164.172.92:3002/api';
 
 export interface Company {
   id: number;
-  name: string;
+  name?: string; // Mantener por compatibilidad
+  company_name: string; // Campo principal
   sector: string;
   tenant_id: string;
   phone?: string;
@@ -190,6 +192,51 @@ class ApiService {
     return this.fetchApi(`/sync/companies/${companyId}/wazuh`, {
       method: 'DELETE',
     });
+  }
+
+  // NUEVO: Método para impersonar empresa (solo super-admin)
+  async impersonateCompany(tenantId: string): Promise<ApiResponse<{
+    token: string;
+    user: any;
+    expires_at: string;
+  }>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/impersonate/${tenantId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('zienshield-token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en impersonación:', error);
+      throw error;
+    }
+  }
+
+  // NUEVO: Método para auto-login con token de impersonación
+  async autoLogin(impersonationToken: string): Promise<ApiResponse<{
+    token: string;
+    user: any;
+  }>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/auto-login/${impersonationToken}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error en auto-login:', error);
+      throw error;
+    }
   }
 }
 
