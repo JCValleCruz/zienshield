@@ -48,6 +48,16 @@ interface InventoryDevice {
     cpu: string;
     cores: number;
   };
+  network: {
+    mac_address: string;
+    interface_type: string;
+    adapter_name: string;
+    ttl: string;
+    interface_status: string;
+    speed: string;
+    gateway: string;
+    dns: string;
+  };
   status: 'active' | 'disconnected' | 'pending';
   last_seen: string;
   last_seen_text: string;
@@ -112,6 +122,8 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
   });
   const [showDeviceModal, setShowDeviceModal] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<InventoryDevice | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
 
   // Configuración del sector basada en los datos del usuario
   const getSectorConfig = (sector: string) => {
@@ -353,6 +365,11 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
         if (result.success && result.data) {
           console.log('? Inventario cargado:', result.data);
           setInventoryData(result.data);
+          
+          // Actualizar timestamps para el auto-refresh
+          const now = new Date();
+          setLastRefresh(now);
+          setNextRefresh(new Date(now.getTime() + 2 * 60 * 1000)); // +2 minutos
         }
       } else {
         console.error('? Error cargando inventario:', response.status);
@@ -486,8 +503,18 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               onClick={loadInventory}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
             >
-              ?? Refrescar
+              Actualizar
             </button>
+
+            {/* Indicador de Auto-refresh */}
+            {lastRefresh && (
+              <div className="flex flex-col text-xs text-gray-400">
+                <span>Última actualización: {lastRefresh.toLocaleTimeString('es-ES')}</span>
+                {nextRefresh && (
+                  <span>Próxima actualización: {nextRefresh.toLocaleTimeString('es-ES')}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -626,7 +653,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+        <div className="bg-gray-800 rounded-xl p-6 w-[95vw] h-[95vh] m-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Detalles del Dispositivo</h2>
             <button
@@ -637,17 +664,13 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             {/* Información Básica */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-blue-400 mb-3">Información Básica</h3>
               <div>
                 <span className="text-gray-400">Nombre:</span>
                 <span className="text-white ml-2 font-medium">{device.name}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">IP:</span>
-                <span className="text-white ml-2">{device.ip}</span>
               </div>
               <div>
                 <span className="text-gray-400">ID Agente:</span>
@@ -668,8 +691,8 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                 <span className="text-white ml-2">{device.group}</span>
               </div>
               <div>
-                <span className="text-gray-400">Versión:</span>
-                <span className="text-white ml-2">{device.version}</span>
+                <span className="text-gray-400">Última conexión:</span>
+                <span className="text-white ml-2">{device.last_seen_text}</span>
               </div>
             </div>
 
@@ -687,21 +710,50 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
               <div>
                 <span className="text-gray-400">RAM:</span>
                 <span className="text-white ml-2">{device.hardware.ram}</span>
-             </div>
-             <div>
-               <span className="text-gray-400">CPU:</span>
-               <span className="text-white ml-2">{device.hardware.cpu}</span>
-             </div>
-             <div>
-               <span className="text-gray-400">Núcleos:</span>
-               <span className="text-white ml-2">{device.hardware.cores}</span>
-             </div>
-             <div>
-               <span className="text-gray-400">Última conexión:</span>
-               <span className="text-white ml-2">{device.last_seen_text}</span>
-             </div>
-           </div>
-         </div>
+              </div>
+              <div>
+                <span className="text-gray-400">CPU:</span>
+                <span className="text-white ml-2">{device.hardware.cpu}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Núcleos:</span>
+                <span className="text-white ml-2">{device.hardware.cores}</span>
+              </div>
+            </div>
+
+            {/* Red - NUEVA COLUMNA */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-orange-400 mb-3">Red</h3>
+              <div>
+                <span className="text-gray-400">IP:</span>
+                <span className="text-white ml-2">{device.ip}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">MAC Address:</span>
+                <span className="text-white ml-2">{device.network.mac_address}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Velocidad:</span>
+                <span className="text-white ml-2">{device.network.speed}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Interfaz:</span>
+                <span className="text-white ml-2">{device.network.interface_type}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Gateway:</span>
+                <span className="text-white ml-2">{device.network.gateway}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">DNS:</span>
+                <span className="text-white ml-2">{device.network.dns}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Adaptador:</span>
+                <span className="text-white ml-2">{device.network.adapter_name}</span>
+              </div>
+            </div>
+          </div>
 
          {/* Vulnerabilidades */}
          <div className="mt-6">
@@ -785,6 +837,34 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
  useEffect(() => {
    loadCompanyData();
  }, [user.tenant_id]);
+
+// Cargar inventario automáticamente cuando se navega a la sección
+useEffect(() => {
+  if (activeSection === 'dispositivos-inventario' && user.tenant_id) {
+    loadInventory();
+  }
+}, [activeSection, user.tenant_id]);
+
+// Auto-refresh cada 2 minutos cuando estamos en la sección de inventario
+useEffect(() => {
+  let refreshInterval: NodeJS.Timeout;
+  
+  if (activeSection === 'dispositivos-inventario' && user.tenant_id) {
+    console.log('🔄 Iniciando auto-refresh del inventario cada 2 minutos...');
+    
+    refreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refresh: Actualizando inventario...');
+      loadInventory();
+    }, 2 * 60 * 1000); // 2 minutos = 120,000 ms
+  }
+
+  return () => {
+    if (refreshInterval) {
+      console.log('🛑 Deteniendo auto-refresh del inventario');
+      clearInterval(refreshInterval);
+    }
+  };
+}, [activeSection, user.tenant_id]);
 
  const getStatusColor = (status: string) => {
    switch(status) {
@@ -1189,8 +1269,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
        <div className="p-4 border-t border-gray-700">
          <div className="text-sm text-gray-400 mb-4">
            <p>{user.company_name}</p>
-           <p>Sector: {currentSector.icon} {currentSector.label}</p>
-           <p>Tenant: {user.tenant_id}</p>
+            <p>Tenant: {user.tenant_id}</p>
          </div>
          <button
            onClick={onLogout}
@@ -1213,9 +1292,6 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
                 menuItems.find(item => item.submenu?.find(sub => sub.id === activeSection))?.submenu?.find(sub => sub.id === activeSection)?.label || 
                 'Dashboard'}
              </h1>
-             <p className="text-gray-400">
-               {user.company_name}  {user.email}
-             </p>
            </div>
            <p className="text-gray-400">
              Última actualización: {dashboardData.lastUpdate}

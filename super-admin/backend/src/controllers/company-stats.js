@@ -697,6 +697,153 @@ const getAllCompanyDevices = async (req, res) => {
           console.error(`❌ Error obteniendo hardware del agente ${agent.id}:`, hwError.message);
         }
 
+        // ========== EXTRACCIÓN DE INFORMACIÓN DE RED - MEJORADA ==========
+        let networkInfo = { 
+          mac_address: "N/A", 
+          interface_type: "N/A", 
+          adapter_name: "N/A", 
+          ttl: "N/A",
+          interface_status: "N/A",
+          speed: "N/A",
+          gateway: "N/A",
+          dns: "N/A"
+        };
+        
+        try {
+          console.log(`🌐 Obteniendo información de red del agente ${agent.id}...`);
+          
+          // Obtener interfaces de red
+          const netResponse = await wazuhApiCall(`/syscollector/${agent.id}/netiface`);
+          // Obtener información de protocolos (gateway, DNS)
+          const protoResponse = await wazuhApiCall(`/syscollector/${agent.id}/netproto`);
+          
+          if (netResponse && netResponse.data && netResponse.data.affected_items && netResponse.data.affected_items.length > 0) {
+            const interfaces = netResponse.data.affected_items;
+            const protocols = protoResponse?.data?.affected_items || [];
+            
+            console.log(`🔌 Network Data para agente ${agent.id}:`, JSON.stringify(interfaces, null, 2));
+            console.log(`🌐 Protocol Data para agente ${agent.id}:`, JSON.stringify(protocols, null, 2));
+            
+            // NUEVA LÓGICA CORREGIDA: Mejor detección de interfaces
+            let mainInterface = null;
+            let mainProtocol = null;
+            
+            // Primero, buscar protocolo IPv4 con gateway válido (solo para equipos conectados)
+            const activeProtocol = protocols.find(proto => 
+              proto.type === 'ipv4' && 
+              proto.gateway && 
+              proto.gateway.trim() !== '' && 
+              proto.gateway !== ' ' &&
+              !proto.iface.includes('Loopback') &&
+              !proto.iface.includes('WSL') &&
+              !proto.iface.includes('Bluetooth')
+            );
+            
+            if (activeProtocol) {
+              console.log(`🎯 Interfaz con gateway encontrada: ${activeProtocol.iface} con gateway: ${activeProtocol.gateway}`);
+              
+              // Buscar la interfaz física correspondiente
+              mainInterface = interfaces.find(iface => 
+                iface.name === activeProtocol.iface && 
+                iface.mac !== '00:00:00:00:00:00'
+              );
+              
+              mainProtocol = activeProtocol;
+            }
+            
+            // Si no hay gateway (equipo desconectado), buscar la interfaz principal por otros criterios
+            if (!mainInterface) {
+              console.log(`🔍 No hay gateway, buscando interfaz principal por tráfico...`);
+              
+              // Filtrar interfaces válidas (excluir virtuales y loopback)
+              const validInterfaces = interfaces.filter(iface => 
+                iface.mac !== '00:00:00:00:00:00' &&
+                !iface.name.includes('Loopback') &&
+                !iface.name.includes('WSL') &&
+                !iface.name.includes('vEthernet') &&
+                !iface.name.includes('Bluetooth') &&
+                !iface.name.includes('VirtualBox')
+              );
+              
+              // Ordenar por tráfico total (RX + TX)
+              validInterfaces.sort((a, b) => {
+                const aTraffic = (a.rx?.bytes || 0) + (a.tx?.bytes || 0);
+                const bTraffic = (b.rx?.bytes || 0) + (b.tx?.bytes || 0);
+                return bTraffic - aTraffic;
+              });
+              
+              mainInterface = validInterfaces[0];
+              console.log(`🔍 Interfaz seleccionada por tráfico: ${mainInterface?.name} con ${((mainInterface?.rx?.bytes || 0) + (mainInterface?.tx?.bytes || 0))} bytes`);
+            }
+            
+            if (mainInterface) {
+              // CORREGIR: Mejor detección del tipo de interfaz
+              let interfaceType = "Cable";
+              const adapterName = (mainInterface.adapter || "").toLowerCase();
+              const interfaceName = (mainInterface.name || "").toLowerCase();
+              
+              // Detectar WiFi de forma más precisa
+              if (adapterName.includes('wifi') || 
+                  adapterName.includes('wireless') || 
+                  adapterName.includes('wi-fi') ||
+                  adapterName.includes('802.11') ||
+                  interfaceName.includes('wifi') ||
+                  interfaceName.includes('wireless')) {
+                interfaceType = "WiFi";
+              }
+              
+              // Determinar velocidad basada en el adaptador
+              let speed = "N/A";
+              if (adapterName.includes('2.5gbe') || adapterName.includes('2.5g')) {
+                speed = "2500 Mbps";
+              } else if (adapterName.includes('gigabit') || adapterName.includes('1gbe')) {
+                speed = "1000 Mbps";
+              } else if (adapterName.includes('100m')) {
+                speed = "100 Mbps";
+              } else if (interfaceType === "WiFi") {
+                // Para WiFi, estimar basado en estándares comunes
+                if (adapterName.includes('ax') || adapterName.includes('wifi 6')) {
+                  speed = "1200 Mbps"; // WiFi 6
+                } else if (adapterName.includes('ac') || adapterName.includes('wifi 5')) {
+                  speed = "866 Mbps"; // WiFi 5
+                } else {
+                  speed = "300 Mbps"; // WiFi básico
+                }
+              } else if (mainInterface.mtu && mainInterface.mtu >= 1500) {
+                speed = "1000 Mbps"; // Ethernet Gigabit por defecto
+              }
+              
+              // CORREGIR: Estado real de la interfaz
+              let realStatus = "Inactiva";
+              if (mainInterface.state === 'up' && activeProtocol && activeProtocol.gateway.trim() !== '') {
+                realStatus = "Activa"; // Solo si está UP y tiene gateway
+              } else if (mainInterface.state === 'up') {
+                realStatus = "Sin conexión"; // UP pero sin gateway
+              }
+              
+              networkInfo = {
+                mac_address: mainInterface.mac || "N/A",
+                interface_type: interfaceType,
+                adapter_name: mainInterface.adapter || mainInterface.name || "N/A",
+                ttl: interfaceType === 'WiFi' ? '64' : '64', // TTL estándar
+                interface_status: realStatus,
+                speed: speed,
+                gateway: mainProtocol?.gateway || "N/A",
+                dns: mainProtocol ? "Auto" : "N/A"
+              };
+              
+              console.log(`✅ Información de red extraída para ${agent.id}:`, networkInfo);
+              console.log(`🔍 Interfaz seleccionada: ${mainInterface.name} (${mainInterface.mac}) - Tipo: ${interfaceType} - Estado: ${realStatus}`);
+            } else {
+              console.warn(`⚠️ No se encontró interfaz principal para el agente ${agent.id}`);
+            }
+          } else {
+            console.warn(`⚠️ No se encontraron interfaces de red para el agente ${agent.id}`);
+          }
+        } catch (netError) {
+          console.error(`❌ Error obteniendo información de red del agente ${agent.id}:`, netError.message);
+        }
+
         // Analizar vulnerabilidades
         const vulnerabilities = await analyzeAgentVulnerabilities(agent);
         const criticalityScore = calculateCriticalityScore(vulnerabilities);
@@ -729,6 +876,7 @@ const getAllCompanyDevices = async (req, res) => {
           os_version: osVersion,
           architecture: architecture,
           hardware: hardwareInfo, // ← AHORA CON DATOS REALES
+          network: networkInfo, // ← NUEVA INFORMACIÓN DE RED
           status: agent.status,
           last_seen: agent.lastKeepAlive || agent.dateAdd || new Date().toISOString(),
           last_seen_text: lastSeenText,
@@ -756,6 +904,7 @@ const getAllCompanyDevices = async (req, res) => {
           os_version: "N/A",
           architecture: "N/A",
           hardware: { ram: "N/A", cpu: "N/A", cores: 0 },
+          network: { mac_address: "N/A", interface_type: "N/A", adapter_name: "N/A", ttl: "N/A", interface_status: "N/A", speed: "N/A", gateway: "N/A", dns: "N/A" },
           status: agent.status,
           last_seen: agent.lastKeepAlive || agent.dateAdd || new Date().toISOString(),
           last_seen_text: "Error",
