@@ -4,6 +4,9 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Importar servicio de actualización de vulnerabilidades
+const { startVulnerabilityUpdateService } = require('./services/vulnerabilityUpdateService');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 
@@ -40,6 +43,7 @@ app.use('/api/companies', require('./routes/companies'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/stats', require('./routes/stats'));
 app.use("/api/company", require("./routes/company-stats"));
+app.use("/api/company", require("./routes/vulnerabilities"));
 app.use('/api/system/server-metrics', require('./routes/server-metrics'));
 app.use('/api/sync', require('./routes/sync'));
 
@@ -72,6 +76,9 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 ZienSHIELD Super Admin Backend funcionando en puerto ${PORT}`);
   console.log(`📊 Dashboard disponible en: http://localhost:${PORT}/api/health`);
   console.log(`🔗 Frontend URL configurada: ${process.env.FRONTEND_URL}`);
+  
+  // Iniciar servicio de actualización de vulnerabilidades
+  startVulnerabilityUpdateService();
 });
 
 module.exports = app;

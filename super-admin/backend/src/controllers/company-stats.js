@@ -343,82 +343,94 @@ const calculateCriticalityScore = (vulnerabilities) => {
 };
 
 // Función para analizar vulnerabilidades de un agente específico
-const analyzeAgentVulnerabilities = async (agent) => {
+const analyzeAgentVulnerabilities = async (agent, companyId = null) => {
   try {
-    console.log(`🔍 Analizando vulnerabilidades del agente ${agent.id} (${agent.name})...`);
+    console.log(`🔍 Analizando vulnerabilidades del agente ${agent.id} (${agent.name}) con CVE reales...`);
 
+    // Si el agente está desconectado, intentar obtener datos almacenados
+    if (agent.status !== 'active' && companyId) {
+      const storedVulns = await getStoredVulnerabilities(companyId, agent.id);
+      if (storedVulns.length > 0) {
+        const stored = storedVulns[0];
+        console.log(`📚 Usando vulnerabilidades almacenadas para agente desconectado ${agent.id}`);
+        return {
+          critical: stored.counts.critical,
+          high: stored.counts.high,
+          medium: stored.counts.medium,
+          low: stored.counts.low
+        };
+      }
+    }
+
+    // Obtener paquetes del agente desde Wazuh
     const packagesResponse = await wazuhApiCall(`/syscollector/${agent.id}/packages?limit=1000`);
 
     if (!packagesResponse || !packagesResponse.data || !packagesResponse.data.affected_items) {
       console.warn(`⚠️ No se pudieron obtener paquetes del agente ${agent.id}`);
-      return {
-        critical: 0,
-        high: 0,
-        medium: 0,
-        low: 0
-      };
+      
+      // Intentar datos almacenados como fallback
+      if (companyId) {
+        const storedVulns = await getStoredVulnerabilities(companyId, agent.id);
+        if (storedVulns.length > 0) {
+          const stored = storedVulns[0];
+          console.log(`📚 Usando datos almacenados como fallback para agente ${agent.id}`);
+          return {
+            critical: stored.counts.critical,
+            high: stored.counts.high,
+            medium: stored.counts.medium,
+            low: stored.counts.low
+          };
+        }
+      }
+      
+      return { critical: 0, high: 0, medium: 0, low: 0 };
     }
 
     const packages = packagesResponse.data.affected_items;
-    console.log(`📦 Agente ${agent.id}: ${packages.length} paquetes instalados`);
+    
+    // Usar el nuevo sistema de escaneo de vulnerabilidades basado en CVE
+    const vulnerabilityData = await scanAgentVulnerabilities(agent.id, packages);
+    
+    // Guardar datos en la base de datos si tenemos companyId
+    if (companyId) {
+      await saveVulnerabilityData(
+        companyId,
+        agent.id,
+        agent.name || `Agent-${agent.id}`,
+        vulnerabilityData
+      );
+    }
 
-    let vulnerabilities = {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0
+    return {
+      critical: vulnerabilityData.critical.length,
+      high: vulnerabilityData.high.length,
+      medium: vulnerabilityData.medium.length,
+      low: vulnerabilityData.low.length
     };
-
-    packages.forEach(pkg => {
-      const packageName = pkg.name?.toLowerCase() || "";
-      let foundVulnerability = false;
-
-      VULNERABLE_PACKAGES.critical.forEach(vulnPkg => {
-        if (packageName.includes(vulnPkg) && !foundVulnerability) {
-          vulnerabilities.critical++;
-          foundVulnerability = true;
-        }
-      });
-
-      if (!foundVulnerability) {
-        VULNERABLE_PACKAGES.high.forEach(vulnPkg => {
-          if (packageName.includes(vulnPkg) && !foundVulnerability) {
-            vulnerabilities.high++;
-            foundVulnerability = true;
-          }
-        });
-      }
-
-      if (!foundVulnerability) {
-        VULNERABLE_PACKAGES.medium.forEach(vulnPkg => {
-          if (packageName.includes(vulnPkg) && !foundVulnerability) {
-            vulnerabilities.medium++;
-            foundVulnerability = true;
-          }
-        });
-      }
-
-      if (!foundVulnerability) {
-        VULNERABLE_PACKAGES.low.forEach(vulnPkg => {
-          if (packageName.includes(vulnPkg) && !foundVulnerability) {
-            vulnerabilities.low++;
-            foundVulnerability = true;
-          }
-        });
-      }
-    });
-
-    console.log(`📊 Agente ${agent.id} vulnerabilidades:`, vulnerabilities);
-    return vulnerabilities;
 
   } catch (error) {
-    console.error(`❌ Error analizando agente ${agent.id}:`, error);
-    return {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0
-    };
+    console.error(`❌ Error analizando vulnerabilidades del agente ${agent.id}:`, error);
+    
+    // Intentar datos almacenados como último recurso
+    if (companyId) {
+      try {
+        const storedVulns = await getStoredVulnerabilities(companyId, agent.id);
+        if (storedVulns.length > 0) {
+          const stored = storedVulns[0];
+          console.log(`📚 Usando datos almacenados por error en agente ${agent.id}`);
+          return {
+            critical: stored.counts.critical,
+            high: stored.counts.high,
+            medium: stored.counts.medium,
+            low: stored.counts.low
+          };
+        }
+      } catch (dbError) {
+        console.error(`❌ Error accediendo a datos almacenados:`, dbError);
+      }
+    }
+    
+    return { critical: 0, high: 0, medium: 0, low: 0 };
   }
 };
 
@@ -494,7 +506,7 @@ const getCriticalDevices = async (req, res) => {
           console.warn(`⚠️ No se pudo obtener OS del agente ${agent.id}`);
         }
 
-        const vulnerabilities = await analyzeAgentVulnerabilities(agent);
+        const vulnerabilities = await analyzeAgentVulnerabilities(agent, company.id);
         const criticalityScore = calculateCriticalityScore(vulnerabilities);
 
         const deviceData = {
@@ -548,6 +560,17 @@ const getCriticalDevices = async (req, res) => {
     });
   }
 };
+
+// Importar el sistema de rastreo de conexión
+const { updateDeviceConnectionStatus, getDeviceConnectionTime } = require('../utils/deviceConnectionTracker');
+
+// Importar el nuevo sistema de vulnerabilidades
+const { 
+  analyzeAgentVulnerabilities: scanAgentVulnerabilities, 
+  saveVulnerabilityData, 
+  getStoredVulnerabilities,
+  getCompanyVulnerabilitySummary 
+} = require('../utils/vulnerabilityScanner');
 
 // FUNCIÓN NUEVA: Obtener inventario completo de dispositivos - COMPLETAMENTE CORREGIDA
 const getAllCompanyDevices = async (req, res) => {
@@ -845,27 +868,19 @@ const getAllCompanyDevices = async (req, res) => {
         }
 
         // Analizar vulnerabilidades
-        const vulnerabilities = await analyzeAgentVulnerabilities(agent);
+        const vulnerabilities = await analyzeAgentVulnerabilities(agent, company.id);
         const criticalityScore = calculateCriticalityScore(vulnerabilities);
 
-        // Calcular tiempo desde la última conexión
-        let lastSeenText = "Nunca conectado";
-        if (agent.lastKeepAlive || agent.dateAdd) {
-          const lastSeen = new Date(agent.lastKeepAlive || agent.dateAdd);
-          const now = new Date();
-          const diffMs = now - lastSeen;
-          const diffMinutes = Math.floor(diffMs / (1000 * 60));
-          const diffHours = Math.floor(diffMinutes / 60);
-          const diffDays = Math.floor(diffHours / 24);
-
-          if (diffMinutes < 60) {
-            lastSeenText = `Hace ${diffMinutes} min`;
-          } else if (diffHours < 24) {
-            lastSeenText = `Hace ${diffHours}h`;
-          } else {
-            lastSeenText = `Hace ${diffDays} días`;
-          }
-        }
+        // Actualizar estado de conexión en nuestro sistema de rastreo
+        await updateDeviceConnectionStatus(
+          company.id, 
+          agent.id, 
+          agent.name || `Agent-${agent.id}`, 
+          agent.status
+        );
+        
+        // Obtener tiempo real de conexión desde nuestro sistema de rastreo
+        const lastSeenText = await getDeviceConnectionTime(company.id, agent.id);
 
         // Crear el objeto del dispositivo con información correcta
         const deviceData = {
