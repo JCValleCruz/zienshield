@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter - Métricas del sistema
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # ZienShield Super Admin Backend - Métricas de aplicación y web
+  - job_name: 'zienshield-super-admin'
+    static_configs:
+      - targets: ['194.164.172.92:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # ZienShield Backend API - Métricas del sistema (si existe)
+  - job_name: 'zienshield-backend'
+    static_configs:
+      - targets: ['194.164.172.92:3001']
+    metrics_path: '/api/system/server-metrics'
+    scrape_interval: 30s

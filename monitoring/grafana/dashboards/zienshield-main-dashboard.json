@@ -1,0 +1,257 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ZienShield - Dashboard Principal",
+    "tags": ["zienshield", "security", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Usuarios Activos",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_active_users",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 50},
+                {"color": "red", "value": 100}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Eventos de Seguridad/seg",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_security_events_per_second",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 50},
+                {"color": "red", "value": 200}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Empresas Totales",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_companies_total",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "blue", "value": null}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Agentes Conectados",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_connected_agents",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 100},
+                {"color": "red", "value": 300}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "CPU del Servidor (%)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "100 - (avg(rate(zienshield_process_cpu_seconds_total[5m])) * 100)",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Memoria del Sistema",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "Memoria Disponible %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 7,
+        "title": "Requests HTTP por Segundo",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(zienshield_http_requests_total[5m])",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{method}} {{route}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Duración de Requests HTTP",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(zienshield_http_request_duration_seconds_bucket[5m]))",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(zienshield_http_request_duration_seconds_bucket[5m]))",
+            "format": "time_series",
+            "refId": "B",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 9,
+        "title": "Uso de Disco",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "(node_filesystem_size_bytes{mountpoint=\"/\"} - node_filesystem_free_bytes{mountpoint=\"/\"}) / node_filesystem_size_bytes{mountpoint=\"/\"} * 100",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "Disco Usado %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Load Average",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "node_load1",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "1m"
+          },
+          {
+            "expr": "node_load5",
+            "format": "time_series",
+            "refId": "B",
+            "legendFormat": "5m"
+          },
+          {
+            "expr": "node_load15",
+            "format": "time_series",
+            "refId": "C",
+            "legendFormat": "15m"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "schemaVersion": 16,
+    "version": 0
+  }
+}

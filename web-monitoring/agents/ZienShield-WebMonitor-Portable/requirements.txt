@@ -1,0 +1,3 @@
+# ZienShield Web Monitor - Dependencias
+requests>=2.25.0
+# Todas las demás librerías son estándar de Python 3.7+

@@ -1,0 +1,13 @@
+{
+  "agent_id": "c2dc19a1-5b9a-444a-ba5e-19d9d9aba274",
+  "hostname": "pc-axafone-jcvalle",
+  "server_url": "http://194.164.172.92:3001",
+  "metrics_endpoint": "/api/web-traffic/metrics",
+  "enrollment_time": "2025-07-24 15:39:12 UTC",
+  "os_info": {
+    "system": "Linux",
+    "platform": "linux",
+    "release": "6.8.0-64-generic"
+  },
+  "version": "1.0.0"
+}

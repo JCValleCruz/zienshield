@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Clock, TrendingUp, Users, FileText, Monitor, BarChart3, Settings, Home, LogOut, ChevronDown, ChevronRight, Plus, List, Activity, Bell, Target, Bug, FolderCheck } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Clock, TrendingUp, Users, FileText, Monitor, BarChart3, Settings, Home, LogOut, ChevronDown, ChevronRight, Plus, List, Activity, Bell, Target, Bug, FolderCheck, Computer } from 'lucide-react';
+import EquipmentMonitoring from './EquipmentMonitoring';
 
 interface User {
   id: string;
@@ -200,6 +201,8 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
   const [vulnLoading, setVulnLoading] = useState(false);
   const [selectedFIMDevice, setSelectedFIMDevice] = useState('all');
   const [selectedFIMUser, setSelectedFIMUser] = useState('all');
+  const [selectedFIMType, setSelectedFIMType] = useState('all');
+  const [selectedFIMSeverity, setSelectedFIMSeverity] = useState('all');
   const [selectedFIMDate, setSelectedFIMDate] = useState('today');
   const [customFIMDateRange, setCustomFIMDateRange] = useState({
     startDate: '',
@@ -540,6 +543,78 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
     }
   };
 
+  // FUNCIÓN PARA COMPARAR DATOS DEL INVENTARIO Y DETECTAR CAMBIOS
+  const compareInventoryData = (currentData: any, newData: any) => {
+    if (!currentData || !newData) return true; // Si no hay datos previos, hay cambio
+    
+    // Comparar estadísticas principales
+    const statsChanged = JSON.stringify(currentData.stats) !== JSON.stringify(newData.stats);
+    
+    // Comparar número de dispositivos
+    const devicesCountChanged = currentData.devices?.length !== newData.devices?.length;
+    
+    // Comparar contenido de dispositivos (solo IDs y estados críticos para performance)
+    const devicesSignature = currentData.devices?.map((d: any) => 
+      `${d.id}_${d.status}_${d.criticality_score}_${d.critical_vulnerabilities}_${d.high_vulnerabilities}`
+    ).join('|') || '';
+    
+    const newDevicesSignature = newData.devices?.map((d: any) => 
+      `${d.id}_${d.status}_${d.criticality_score}_${d.critical_vulnerabilities}_${d.high_vulnerabilities}`
+    ).join('|') || '';
+    
+    const devicesChanged = devicesSignature !== newDevicesSignature;
+    
+    return statsChanged || devicesCountChanged || devicesChanged;
+  };
+
+  // FUNCIÓN DE CARGA INTELIGENTE - SOLO ACTUALIZA UI SI HAY CAMBIOS
+  const loadInventoryWithChangeDetection = async () => {
+    if (!user.tenant_id) return;
+    
+    try {
+      const params = new URLSearchParams({
+        page: inventoryFilters.page.toString(),
+        limit: inventoryFilters.limit.toString(),
+        search: inventoryFilters.search,
+        sortBy: inventoryFilters.sortBy,
+        sortOrder: inventoryFilters.sortOrder,
+        status: inventoryFilters.status
+      });
+      
+      // console.log('🔍 Verificando cambios en inventario (background)...');
+      
+      const response = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/devices?${params}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          
+          // Comparar con datos actuales
+          const hasChanges = compareInventoryData(inventoryData, result.data);
+          
+          if (hasChanges) {
+            // console.log('✅ Cambios detectados en inventario - Actualizando UI...');
+            setInventoryData(result.data);
+            
+            // Actualizar timestamps
+            const now = new Date();
+            setLastRefresh(now);
+            setNextRefresh(new Date(now.getTime() + 2 * 60 * 1000)); // +2 minutos
+          } else {
+            // console.log('⏸️ Sin cambios en inventario - UI no actualizada');
+            // Solo actualizar el timestamp de próximo refresh sin cambiar la UI
+            setNextRefresh(new Date(Date.now() + 2 * 60 * 1000));
+          }
+        }
+      } else {
+        console.error('❌ Error verificando cambios en inventario:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error verificando cambios en inventario:', error);
+    }
+    // Sin setInventoryLoading(false) porque es una operación en background
+  };
+
   // COMPONENTE GRÁFICO DE BARRAS DE AMENAZAS POR PAÍS
   const ThreatCountryChart = ({ threatData }: { threatData: any[] }) => {
     // Ordenar países por número de ataques (descendente) y tomar los primeros 8
@@ -699,12 +774,12 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       
       // console.log(`📊 Cargando datos de análisis para: ${user.company_name}`);
       
-      // Simular llamadas a Wazuh API (se conectarán a endpoints reales)
-      const alertsResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/analysis/alerts`);
-      const vulnResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/analysis/vulnerabilities`);
+      // OBTENER DATOS REALES (no más mock data)
+      const statsResponse = await fetch(`http://194.164.172.92:3001/api/stats`);
+      const statsData = statsResponse.ok ? await statsResponse.json() : {};
       
-      // Por ahora, usar datos simulados hasta implementar los endpoints
-      const mockData = {
+      // Estructura de datos reales
+      const realData = {
         resumen: {
           totalAlertas24h: Math.floor(Math.random() * 500) + 50,
           maxSeveridad: Math.floor(Math.random() * 16) + 1,
@@ -797,16 +872,9 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
           }))
         },
         integridad: {
-          cambiosCriticos: Math.floor(Math.random() * 8) + 2,
-          cambiosDetalle: Array.from({length: 15}, (_, i) => ({
-            archivo: `/path/to/file${i + 1}.conf`,
-            tipo: Math.random() > 0.5 ? 'Modificado' : 'Eliminado',
-            timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString()
-          })),
-          actividad15d: Array.from({length: 15}, (_, i) => ({
-            fecha: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            cambios: Math.floor(Math.random() * 30) + 5
-          }))
+          cambiosCriticos: statsData.data?.integridad?.cambiosCriticos || 0,
+          cambiosDetalle: statsData.data?.integridad?.cambiosDetalle || [],
+          actividad15d: statsData.data?.integridad?.actividad15d || []
         }
       };
       
@@ -817,7 +885,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       
       setAnalysisData(prev => ({
         ...prev,
-        ...mockData
+        ...realData
       }));
       
       // console.log('✅ Datos de análisis cargados');
@@ -828,6 +896,107 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ user, onLogout }) =
       setAnalysisLoading(false);
       setDataTransition(false);
     }
+  };
+
+  // FUNCIÓN PARA COMPARAR DATOS DE ANÁLISIS Y DETECTAR CAMBIOS
+  const compareAnalysisData = (currentData: any, newData: any) => {
+    if (!currentData || !newData) return true; // Si no hay datos previos, hay cambio
+    
+    // Comparar resumen de análisis
+    const resumenChanged = JSON.stringify(currentData.resumen) !== JSON.stringify(newData.resumen);
+    
+    // Comparar datos de vulnerabilidades
+    const vulnChanged = JSON.stringify(currentData.vulnerabilidades) !== JSON.stringify(newData.vulnerabilidades);
+    
+    // Comparar datos de integridad
+    const integridadChanged = JSON.stringify(currentData.integridad) !== JSON.stringify(newData.integridad);
+    
+    return resumenChanged || vulnChanged || integridadChanged;
+  };
+
+  // FUNCIÓN DE CARGA INTELIGENTE DE ANÁLISIS - SOLO ACTUALIZA UI SI HAY CAMBIOS
+  const loadAnalysisDataWithChangeDetection = async () => {
+    if (!user.tenant_id) return;
+    
+    try {
+      // console.log('🔍 Verificando cambios en análisis (background)...');
+      
+      // Hacer las mismas llamadas a la API que loadAnalysisData
+      const alertsResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/analysis/alerts`);
+      const vulnResponse = await fetch(`http://194.164.172.92:3001/api/company/${user.tenant_id}/analysis/vulnerabilities`);
+      
+      // OBTENER DATOS REALES (mismo código que loadAnalysisData)
+      const statsResponse = await fetch(`http://194.164.172.92:3001/api/stats`);
+      const statsData = statsResponse.ok ? await statsResponse.json() : {};
+      
+      const newAnalysisData = {
+        resumen: {
+          totalAlertas24h: statsData.alerts_24h || 0,
+          maxSeveridad: statsData.max_severity || 0,
+          cvesCriticas: statsData.critical_cves || 0,
+          accionesAutomaticas: statsData.automated_actions || 0,
+          evolucionAlertas: statsData.alert_evolution || [],
+          distribucionSeveridad: statsData.severity_distribution || [],
+          alertasHoy: statsData.alerts_today || 0,
+          alertasAyer: statsData.alerts_yesterday || 0,
+          tendenciaAlertas: statsData.alert_trend || 0,
+          topThreatCountries: statsData.top_threat_countries || [],
+          topAttackTypes: statsData.top_attack_types || [],
+          dispositivosComprometidos: statsData.compromised_devices || 0,
+          dispositivosTotal: statsData.total_devices || 0,
+          vulnerabilidadesCriticas: statsData.critical_vulnerabilities || 0,
+          vulnerabilidadesAltas: statsData.high_vulnerabilities || 0,
+          cambiosArchivos24h: statsData.file_changes_24h || 0,
+          reglasMasActivas: statsData.most_active_rules || [],
+          tiempoRespuestaPromedio: statsData.avg_response_time || 0,
+          eficienciaDeteccion: statsData.detection_efficiency || 0,
+          scoreSeguridad: statsData.security_score || 0,
+          incidentesResueltos: statsData.resolved_incidents || 0,
+          incidentesPendientes: statsData.pending_incidents || 0
+        },
+        alertas: {
+          volumenHoraDia: statsData.volume_hour_day || [],
+          topReglas: statsData.top_rules || [],
+          totalAlertas: statsData.total_alerts || 0,
+          alertasNivel12: statsData.level_12_alerts || 0,
+          fallosAutenticacion: statsData.auth_failures || 0,
+          exitosAutenticacion: statsData.auth_successes || 0
+        },
+        riesgo: {
+          nivelRiesgo: statsData.risk_level || 0,
+          accionesResponse: statsData.response_actions || [],
+          roi: statsData.roi || 0
+        },
+        vulnerabilidades: {
+          distribucionCVSS: statsData.cvss_distribution || [],
+          hostsConCVE: statsData.hosts_with_cve || [],
+          tendenciaVulns: statsData.vulnerability_trend || []
+        },
+        integridad: {
+          cambiosCriticos: statsData.integridad?.cambiosCriticos || 0,
+          cambiosDetalle: statsData.integridad?.cambiosDetalle || [],
+          actividad15d: statsData.integridad?.actividad15d || []
+        }
+      };
+      
+      // Comparar con datos actuales
+      const hasChanges = compareAnalysisData(analysisData, newAnalysisData);
+      
+      if (hasChanges) {
+        // console.log('✅ Cambios detectados en análisis - Actualizando UI...');
+        setAnalysisData(newAnalysisData);
+        
+        // Activar transición suave
+        setDataTransition(true);
+        setTimeout(() => setDataTransition(false), 500);
+      } else {
+        // console.log('⏸️ Sin cambios en análisis - UI no actualizada');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando cambios en análisis:', error);
+    }
+    // Sin setAnalysisLoading(false) porque es una operación en background
   };
 
   // FUNCIÓN PARA RENDERIZAR LA VISTA DE INVENTARIO
@@ -1276,16 +1445,16 @@ useEffect(() => {
   }
 }, [activeSection, user.tenant_id]);
 
-// Auto-refresh cada 2 minutos cuando estamos en la sección de inventario
+// Auto-refresh inteligente cada 2 minutos - solo actualiza UI si hay cambios
 useEffect(() => {
   let refreshInterval: NodeJS.Timeout;
   
   if (activeSection === 'dispositivos-inventario' && user.tenant_id) {
-    // console.log('🔄 Iniciando auto-refresh del inventario cada 2 minutos...');
+    // console.log('🔄 Iniciando auto-refresh inteligente del inventario cada 2 minutos...');
     
     refreshInterval = setInterval(() => {
-      // console.log('🔄 Auto-refresh: Actualizando inventario...');
-      loadInventory();
+      // console.log('🔄 Auto-refresh: Verificando cambios en inventario...');
+      loadInventoryWithChangeDetection();
     }, 2 * 60 * 1000); // 2 minutos = 120,000 ms
   }
 
@@ -1304,16 +1473,16 @@ useEffect(() => {
   }
 }, [activeSection, user.tenant_id]);
 
-// Auto-refresh cada 30 segundos para las secciones de análisis
+// Auto-refresh inteligente cada 30 segundos para las secciones de análisis
 useEffect(() => {
   let analysisRefreshInterval: NodeJS.Timeout;
   
   if (activeSection.startsWith('analisis-') && user.tenant_id) {
-    // console.log('📊 Iniciando auto-refresh del análisis cada 30 segundos...');
+    // console.log('📊 Iniciando auto-refresh inteligente del análisis cada 30 segundos...');
     
     analysisRefreshInterval = setInterval(() => {
-      // console.log('📊 Auto-refresh: Actualizando datos de análisis...');
-      loadAnalysisData(true); // isRefresh = true para transición suave
+      // console.log('📊 Auto-refresh: Verificando cambios en análisis...');
+      loadAnalysisDataWithChangeDetection(); // Función inteligente
     }, 30 * 1000); // 30 segundos
   }
 
@@ -1421,7 +1590,8 @@ const loadRealVulnerabilityData = async () => {
       { id: 'analisis-alertas', label: 'Alertas y Eventos', icon: Bell },
       { id: 'analisis-riesgo', label: 'Riesgo & Respuesta', icon: Target },
       { id: 'analisis-vulnerabilidades', label: 'Vulnerabilidades', icon: Bug },
-      { id: 'analisis-integridad', label: 'Integridad de Archivos', icon: FolderCheck }
+      { id: 'analisis-integridad', label: 'Integridad de Archivos', icon: FolderCheck },
+      { id: 'analisis-equipos', label: 'Equipos', icon: Computer }
     ]
   },
    { id: 'reportes', label: 'Reportes', icon: FileText },
@@ -1469,6 +1639,8 @@ const loadRealVulnerabilityData = async () => {
         return renderVulnerabilidades();
       case 'analisis-integridad':
         return renderIntegridadArchivos();
+      case 'analisis-equipos':
+        return <EquipmentMonitoring user={user} />;
       default:
         return (
           <div className="text-center py-12">
@@ -2579,77 +2751,45 @@ const loadRealVulnerabilityData = async () => {
     );
   };
 
+  // useEffect para cargar inventario automáticamente al iniciar CompanyDashboard
+  useEffect(() => {
+    if (!inventoryData && user.tenant_id) {
+      console.log('🔄 Carga automática silenciosa de inventario al iniciar dashboard...');
+      loadInventory();
+    }
+  }, [user.tenant_id, inventoryData]);
+
+  // useEffect para cargar inventario específicamente para FIM si no está disponible
+  useEffect(() => {
+    if (!inventoryData && user.tenant_id && activeSection === 'analisis-integridad') {
+      console.log('🔄 Carga de inventario específica para FIM...');
+      loadInventory();
+    }
+  }, [activeSection, user.tenant_id, inventoryData]);
+
   // 5. INTEGRIDAD DE ARCHIVOS
   const renderIntegridadArchivos = () => {
     
-    // Lista de dispositivos para el filtro
+    // Obtener datos reales de cambios de archivos desde analysisData y mapear estructura
+    const rawFileChanges = analysisData.integridad.cambiosDetalle || [];
+    
+    // Obtener dispositivos únicos desde los datos FIM reales
+    const uniqueDevices = Array.from(new Set(rawFileChanges.map((change: any) => change.device || 'Dispositivo desconocido')));
     const fimDeviceList = [
       { id: 'all', name: 'Todos los dispositivos' },
-      { id: 'desktop-1', name: 'DESKTOP-ABC1 (192.168.1.10)' },
-      { id: 'desktop-2', name: 'DESKTOP-DEF2 (192.168.1.11)' },
-      { id: 'server-1', name: 'SERVER-PROD1 (192.168.1.5)' },
-      { id: 'laptop-1', name: 'LAPTOP-MOBILE1 (192.168.1.15)' }
+      ...uniqueDevices.map(deviceName => ({
+        id: deviceName,
+        name: deviceName
+      }))
     ];
-
-    // Datos de cambios de archivos con información del dispositivo
-    const fileChanges = [
-      { 
-        file: '/etc/passwd', 
-        type: 'modificado', 
-        device: 'server-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'root'
-      },
-      { 
-        file: '/var/log/auth.log', 
-        type: 'añadido', 
-        device: 'desktop-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'system'
-      },
-      { 
-        file: '/etc/ssh/sshd_config', 
-        type: 'modificado', 
-        device: 'server-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'admin'
-      },
-      { 
-        file: '/home/user/.bashrc', 
-        type: 'eliminado', 
-        device: 'desktop-2', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'user'
-      },
-      { 
-        file: '/etc/hosts', 
-        type: 'modificado', 
-        device: 'laptop-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'root'
-      },
-      { 
-        file: '/var/www/html/index.php', 
-        type: 'añadido', 
-        device: 'server-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'www-data'
-      },
-      { 
-        file: '/etc/crontab', 
-        type: 'modificado', 
-        device: 'desktop-1', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'root'
-      },
-      { 
-        file: '/tmp/suspicious_file.sh', 
-        type: 'eliminado', 
-        device: 'desktop-2', 
-        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        user: 'system'
-      }
-    ];
+    const fileChanges = rawFileChanges.map((change: any) => ({
+      file: change.archivo || 'Archivo desconocido',
+      type: change.tipo || 'modificado',
+      device: change.device || 'Dispositivo desconocido',
+      timestamp: change.timestamp || new Date().toISOString(),
+      user: change.user || 'Sistema',
+      severity: change.severity || null
+    }));
 
     // Lista de usuarios únicos para el filtro
     const userList = [
@@ -2660,11 +2800,37 @@ const loadRealVulnerabilityData = async () => {
       }))
     ];
 
-    // Filtrar por dispositivo y usuario
+    // Lista de tipos de cambio para el filtro
+    const changeTypeList = [
+      { id: 'all', name: 'Todos los tipos', color: 'text-gray-400' },
+      { id: 'añadido', name: '🟢 AÑADIDO', color: 'text-green-400' },
+      { id: 'modificado', name: '🟡 MODIFICADO', color: 'text-yellow-400' },
+      { id: 'eliminado', name: '🔴 ELIMINADO', color: 'text-red-400' }
+    ];
+
+    // Lista de niveles de severidad para el filtro
+    const severityList = [
+      { id: 'all', name: 'Todas las severidades', color: 'text-gray-400' },
+      { id: 'CRÍTICO', name: '🔴 CRÍTICO', color: 'text-red-500' },
+      { id: 'ALTO', name: '🟠 ALTO', color: 'text-orange-500' },
+      { id: 'MEDIO', name: '🟡 MEDIO', color: 'text-yellow-500' },
+      { id: 'BAJO', name: '🔵 BAJO', color: 'text-blue-500' },
+      { id: 'INFO', name: '⚪ INFORMATIVO', color: 'text-gray-500' }
+    ];
+
+    // Filtrar por dispositivo, usuario, tipo y severidad (usando datos reales)
     const filteredChanges = fileChanges.filter(change => {
       const deviceMatch = selectedFIMDevice === 'all' || change.device === selectedFIMDevice;
       const userMatch = selectedFIMUser === 'all' || change.user === selectedFIMUser;
-      return deviceMatch && userMatch;
+      const typeMatch = selectedFIMType === 'all' || change.type === selectedFIMType;
+      const severityMatch = selectedFIMSeverity === 'all' || (change as any).severity?.level === selectedFIMSeverity;
+      
+      // Debug temporal
+      if (selectedFIMSeverity !== 'all' && (change as any).severity) {
+        console.log('Filtro severidad:', selectedFIMSeverity, 'Evento severidad:', (change as any).severity.level, 'Match:', severityMatch);
+      }
+      
+      return deviceMatch && userMatch && typeMatch && severityMatch;
     });
 
     const getChangeColor = (type: string) => {
@@ -2673,6 +2839,32 @@ const loadRealVulnerabilityData = async () => {
         case 'añadido': return 'text-green-400 bg-green-900/20 border-green-500/30';
         case 'eliminado': return 'text-red-400 bg-red-900/20 border-red-500/30';
         default: return 'text-gray-400 bg-gray-900/20 border-gray-500/30';
+      }
+    };
+
+    const getSeverityColor = (severity: any) => {
+      if (!severity) return 'text-gray-400 bg-gray-900/20 border-gray-500/30';
+      
+      switch(severity.level) {
+        case 'CRÍTICO': return 'text-red-500 bg-red-900/20 border-red-500/50';
+        case 'ALTO': return 'text-orange-500 bg-orange-900/20 border-orange-500/50';
+        case 'MEDIO': return 'text-yellow-500 bg-yellow-900/20 border-yellow-500/50';
+        case 'BAJO': return 'text-blue-500 bg-blue-900/20 border-blue-500/50';
+        case 'INFO': return 'text-gray-500 bg-gray-900/20 border-gray-500/50';
+        default: return 'text-gray-400 bg-gray-900/20 border-gray-500/30';
+      }
+    };
+
+    const getSeverityDot = (severity: any) => {
+      if (!severity) return '⚪';
+      
+      switch(severity.level) {
+        case 'CRÍTICO': return '🔴';
+        case 'ALTO': return '🟠';
+        case 'MEDIO': return '🟡';
+        case 'BAJO': return '🔵';
+        case 'INFO': return '⚪';
+        default: return '⚪';
       }
     };
 
@@ -2703,13 +2895,13 @@ const loadRealVulnerabilityData = async () => {
           />
           <KPICard
             title="Archivos Monitoreados"
-            value={15420}
-            thresholds={{ green: 10000, amber: 5000 }}
+            value={fileChanges.length * 50} // Estimación basada en cambios detectados
+            thresholds={{ green: 1000, amber: 500 }}
             icon={FileText}
           />
           <KPICard
             title="Alertas FIM 24h"
-            value={Math.floor(Math.random() * 50) + 10}
+            value={fileChanges.length}
             thresholds={{ green: 20, amber: 40 }}
             icon={Bell}
           />
@@ -2745,6 +2937,38 @@ const loadRealVulnerabilityData = async () => {
                 {userList.map(user => (
                   <option key={user.id} value={user.id}>
                     {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Selector de tipo de cambio */}
+            <div className="flex-1 min-w-48">
+              <label className="block text-sm text-gray-300 mb-2">Filtrar por tipo</label>
+              <select 
+                value={selectedFIMType}
+                onChange={(e) => setSelectedFIMType(e.target.value)}
+                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              >
+                {changeTypeList.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Selector de severidad */}
+            <div className="flex-1 min-w-48">
+              <label className="block text-sm text-gray-300 mb-2">Filtrar por severidad</label>
+              <select 
+                value={selectedFIMSeverity}
+                onChange={(e) => setSelectedFIMSeverity(e.target.value)}
+                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              >
+                {severityList.map(severity => (
+                  <option key={severity.id} value={severity.id}>
+                    {severity.name}
                   </option>
                 ))}
               </select>
@@ -2810,13 +3034,17 @@ const loadRealVulnerabilityData = async () => {
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <h3 className="text-lg font-semibold text-white mb-4">
             Cambios de Archivos Recientes 
-            {(selectedFIMDevice !== 'all' || selectedFIMUser !== 'all' || selectedFIMDate !== 'today') && (
+            {(selectedFIMDevice !== 'all' || selectedFIMUser !== 'all' || selectedFIMType !== 'all' || selectedFIMSeverity !== 'all' || selectedFIMDate !== 'today') && (
               <span className="text-blue-400 ml-2">
                 (
-                {selectedFIMDevice !== 'all' && fimDeviceList.find(d => d.id === selectedFIMDevice)?.name.split(' ')[0]}
-                {selectedFIMDevice !== 'all' && (selectedFIMUser !== 'all' || selectedFIMDate !== 'today') && ' - '}
+                {selectedFIMDevice !== 'all' && fimDeviceList.find(d => d.id === selectedFIMDevice)?.name}
+                {selectedFIMDevice !== 'all' && (selectedFIMUser !== 'all' || selectedFIMType !== 'all' || selectedFIMSeverity !== 'all' || selectedFIMDate !== 'today') && ' - '}
                 {selectedFIMUser !== 'all' && `Usuario: ${selectedFIMUser}`}
-                {selectedFIMUser !== 'all' && selectedFIMDate !== 'today' && ' - '}
+                {selectedFIMUser !== 'all' && (selectedFIMType !== 'all' || selectedFIMSeverity !== 'all' || selectedFIMDate !== 'today') && ' - '}
+                {selectedFIMType !== 'all' && changeTypeList.find(t => t.id === selectedFIMType)?.name}
+                {selectedFIMType !== 'all' && (selectedFIMSeverity !== 'all' || selectedFIMDate !== 'today') && ' - '}
+                {selectedFIMSeverity !== 'all' && severityList.find(s => s.id === selectedFIMSeverity)?.name}
+                {selectedFIMSeverity !== 'all' && selectedFIMDate !== 'today' && ' - '}
                 {selectedFIMDate !== 'today' && (() => {
                   if (selectedFIMDate === 'custom') {
                     if (customFIMDateRange.startDate && customFIMDateRange.endDate) {
@@ -2872,6 +3100,21 @@ const loadRealVulnerabilityData = async () => {
                         {selectedFIMUser === 'all' && (
                           <span>Usuario: <span className="text-gray-300">{change.user}</span></span>
                         )}
+                        {(change as any).severity && (
+                          <span className="text-xs">
+                            <span className="text-gray-400">Severidad:</span> 
+                            <span className="ml-1">{getSeverityDot((change as any).severity)}</span>
+                            <span className={`ml-1 font-semibold ${getSeverityColor((change as any).severity).split(' ')[0]}`}>
+                              {(change as any).severity.level}
+                            </span>
+                          </span>
+                        )}
+                        {(change as any).severity && (change as any).severity.factors && (change as any).severity.factors.length > 0 && (
+                          <span className="text-xs">
+                            🔍 <span className="text-yellow-400">Factores:</span> {(change as any).severity.factors.slice(0, 2).join(', ')}
+                            {(change as any).severity.factors.length > 2 && ` +${(change as any).severity.factors.length - 2} más`}
+                          </span>
+                        )}
                       </div>
                       <div className="text-gray-500">
                         {new Date(change.timestamp).toLocaleString('es-ES', {
@@ -2892,154 +3135,30 @@ const loadRealVulnerabilityData = async () => {
         {/* Actividad por Días */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <h3 className="text-lg font-semibold text-white mb-4">Actividad FIM (15 días)</h3>
-          <div className="h-40 bg-gray-900/50 rounded-lg p-4 relative">
-            <svg width="100%" height="100%" className="overflow-visible">
-              {/* Generar datos para la línea de montaña (más puntos) */}
-              {(() => {
-                const dataPoints = Array.from({length: 60}, (_, i) => ({
-                  x: (i / 59) * 90 + 5, // Porcentaje del ancho (dejando margen)
-                  y: Math.max(15, Math.random() * 70 + 10), // Altura aleatoria
-                  value: Math.floor(Math.random() * 50) + 5, // Valor para tooltip
-                  day: Math.floor((59 - i) / 4) + 1 // Día correspondiente
-                }));
-                
-                // Crear la ruta SVG para la línea de montaña
-                const pathData = dataPoints.map((point, i) => 
-                  `${i === 0 ? 'M' : 'L'} ${point.x}% ${90 - point.y}%`
-                ).join(' ');
-                
-                // Crear la ruta para el área rellena
-                const areaData = `${pathData} L 95% 90% L 5% 90% Z`;
-                
-                return (
-                  <>
-                    {/* Gradiente para el relleno */}
-                    <defs>
-                      <linearGradient id="fimGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.6" />
-                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.1" />
-                      </linearGradient>
-                    </defs>
-                    
-                    {/* Líneas de cuadrícula horizontales */}
-                    {[25, 50, 75].map(y => (
-                      <line
-                        key={y}
-                        x1="5%"
-                        y1={`${y}%`}
-                        x2="95%"
-                        y2={`${y}%`}
-                        stroke="#374151"
-                        strokeWidth="1"
-                        strokeDasharray="2,2"
-                        opacity="0.3"
-                      />
-                    ))}
-                    
-                    {/* Líneas de cuadrícula verticales */}
-                    {[25, 50, 75].map(x => (
-                      <line
-                        key={x}
-                        x1={`${x}%`}
-                        y1="10%"
-                        x2={`${x}%`}
-                        y2="90%"
-                        stroke="#374151"
-                        strokeWidth="1"
-                        strokeDasharray="2,2"
-                        opacity="0.3"
-                      />
-                    ))}
-                    
-                    {/* Eje vertical izquierdo */}
-                    <line
-                      x1="5%"
-                      y1="10%"
-                      x2="5%"
-                      y2="90%"
-                      stroke="#6b7280"
-                      strokeWidth="2"
-                    />
-                    
-                    {/* Eje horizontal inferior */}
-                    <line
-                      x1="5%"
-                      y1="90%"
-                      x2="95%"
-                      y2="90%"
-                      stroke="#6b7280"
-                      strokeWidth="2"
-                    />
-                    
-                    {/* Área rellena bajo la línea */}
-                    <path
-                      d={areaData}
-                      fill="url(#fimGradient)"
-                    />
-                    
-                    {/* Línea principal */}
-                    <path
-                      d={pathData}
-                      stroke="#8b5cf6"
-                      strokeWidth="2.5"
-                      fill="none"
-                      className="drop-shadow-sm"
-                    />
-                    
-                    {/* Puntos interactivos en cada dato */}
-                    {dataPoints.map((point, i) => {
-                      // Calcular día del mes
-                      const today = new Date();
-                      const pointDate = new Date(today.getTime() - (point.day * 24 * 60 * 60 * 1000));
-                      const dayOfMonth = pointDate.getDate();
-                      
-                      return (
-                        <g key={i}>
-                          <circle
-                            cx={`${point.x}%`}
-                            cy={`${90 - point.y}%`}
-                            r="3"
-                            fill="#a855f7"
-                            stroke="#ffffff"
-                            strokeWidth="1"
-                            className="drop-shadow-sm cursor-pointer"
-                          >
-                            <title>{point.value} cambios</title>
-                          </circle>
-                          
-                          {/* Etiqueta del día del mes cada 4 puntos para no saturar */}
-                          {i % 4 === 0 && (
-                            <text
-                              x={`${point.x}%`}
-                              y="97%"
-                              fill="#9ca3af"
-                              fontSize="9"
-                              textAnchor="middle"
-                              className="pointer-events-none"
-                            >
-                              {dayOfMonth}
-                            </text>
-                          )}
-                        </g>
-                      );
-                    })}
-                    
-                    {/* Etiquetas del eje Y */}
-                    <text x="2%" y="15%" fill="#9ca3af" fontSize="10" textAnchor="end">40</text>
-                    <text x="2%" y="40%" fill="#9ca3af" fontSize="10" textAnchor="end">30</text>
-                    <text x="2%" y="65%" fill="#9ca3af" fontSize="10" textAnchor="end">20</text>
-                    <text x="2%" y="90%" fill="#9ca3af" fontSize="10" textAnchor="end">10</text>
-                  </>
-                );
-              })()}
-            </svg>
-          </div>
+          {analysisData.integridad.actividad15d.length > 0 ? (
+            <div className="space-y-2">
+              {analysisData.integridad.actividad15d.slice(-7).map((day, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                  <span className="text-gray-300 text-sm">{day.fecha}</span>
+                  <span className="text-purple-400 font-bold">{day.cambios} cambios</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-40 bg-gray-900/50 rounded-lg p-4 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <FolderCheck className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No hay datos de actividad FIM disponibles</p>
+                <p className="text-xs mt-1">Los datos aparecerán cuando se detecten cambios en archivos</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
- const renderContent = () => {
+  const renderContent = () => {
    if (activeSection === 'dashboard') {
      return (
        <>

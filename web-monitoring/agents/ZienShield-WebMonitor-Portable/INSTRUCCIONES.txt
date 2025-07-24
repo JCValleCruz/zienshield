@@ -1,0 +1,175 @@
+# 🚀 INSTRUCCIONES DE INSTALACIÓN Y USO
+# ZienShield Web Monitor - Windows Portable
+
+## ⚡ INSTALACIÓN RÁPIDA (3 pasos)
+
+### 1️⃣ Verificar Python
+Abrir PowerShell o CMD y ejecutar:
+```
+python --version
+```
+
+✅ Si muestra "Python 3.x.x" → Continuar al paso 2
+❌ Si da error → Instalar Python desde https://python.org
+
+### 2️⃣ Instalar Dependencias  
+```
+pip install requests
+```
+
+### 3️⃣ Ejecutar Monitor
+Hacer doble clic en: `ZienShield-Monitor.bat`
+
+## 🎯 USO DIARIO
+
+### Para Administradores de TI:
+1. **Despliegue masivo**: Copiar carpeta a cada equipo
+2. **Ejecutar**: Usar el archivo .bat para menú interactivo
+3. **Monitoreo**: Datos visibles en Grafana (http://194.164.172.92:3000)
+
+### Para Usuarios Finales:
+1. **Inicio rápido**: Doble clic en `ZienShield-Monitor.bat`  
+2. **Seleccionar opción**: Menú numerado (1-5)
+3. **Monitoreo continuo**: Opción 1 (recomendada)
+4. **Detener**: Presionar Ctrl+C
+
+## 📊 VERIFICAR QUE FUNCIONA
+
+### Test Rápido:
+1. Ejecutar: `ZienShield-Monitor.bat`
+2. Seleccionar opción `3` (Probar configuración)
+3. Debe mostrar: "✅ Servidor ZienShield accesible"
+
+### Verificar Datos en Grafana:
+1. Ir a: http://194.164.172.92:3000
+2. Login con credenciales de administrador
+3. Buscar dashboard "ZienShield Web Traffic"
+4. Verificar que aparezca el nuevo agente
+
+## 🔤 COMANDOS ÚTILES
+
+### Ejecución Manual:
+```cmd
+# Monitoreo continuo
+python zienshield-web-monitor-windows.py
+
+# Una sola vez (test)
+python zienshield-web-monitor-windows.py --once
+
+# Probar conectividad
+python zienshield-web-monitor-windows.py --test
+
+# Ver ayuda completa
+python zienshield-web-monitor-windows.py --help
+```
+
+### Como Servicio de Windows (Avanzado):
+```cmd
+# Crear tarea programada (ejecutar como Admin)
+schtasks /create /tn "ZienShield Monitor" /tr "python C:\ZienShield\zienshield-web-monitor-windows.py" /sc onstart /ru SYSTEM
+```
+
+## 🚨 SOLUCIÓN DE PROBLEMAS COMUNES
+
+### Error: "Python no reconocido"
+**Causa**: Python no instalado o no en PATH
+**Solución**: 
+1. Instalar desde https://python.org/downloads
+2. Marcar "Add Python to PATH" durante instalación
+3. Reiniciar terminal
+
+### Error: "No module named requests"  
+**Causa**: Librería requests no instalada
+**Solución**:
+```cmd
+pip install requests
+```
+
+### Error: "No se pudo conectar al servidor"
+**Causa**: Firewall o red corporativa
+**Solución**:
+1. Verificar Internet: `ping google.com`
+2. Probar servidor: `telnet 194.164.172.92 3001`
+3. Contactar administrador de red si persiste
+
+### Monitor no envía datos
+**Verificar**:
+1. Ejecutar test: `python zienshield-web-monitor-windows.py --test`
+2. Revisar logs: `~/Documents/ZienShield/zienshield-web-traffic.log`
+3. Verificar en Grafana que aparezca el agente
+
+### Demasiados procesos Python
+**Causa**: Múltiples instancias ejecutándose
+**Solución**:
+```cmd
+# Ver procesos Python
+tasklist | findstr python
+
+# Terminar proceso específico
+taskkill /PID [número_de_proceso] /F
+```
+
+## 🔧 CONFIGURACIÓN AVANZADA
+
+### Cambiar Servidor Backend:
+Editar archivo `zienshield-web-monitor-windows.py`:
+```python
+# Línea ~20
+def __init__(self, backend_url="http://TU-SERVIDOR:3001"):
+```
+
+### Cambiar Frecuencia de Monitoreo:
+```python
+# Línea ~final
+time.sleep(30)  # Cambiar 30 por segundos deseados
+```
+
+### Agregar Nuevas Categorías:
+```python
+# Buscar self.site_categories y agregar:
+'nueva_categoria': ['sitio1.com', 'sitio2.com']
+```
+
+## 📋 CHECKLIST DE DESPLIEGUE
+
+### Antes del Despliegue:
+- [ ] Python 3.7+ instalado en equipos objetivo
+- [ ] Acceso de red al servidor ZienShield (puerto 3001)
+- [ ] Permisos para ejecutar scripts Python
+- [ ] Carpeta Documents accesible para logs
+
+### Durante el Despliegue:
+- [ ] Copiar carpeta ZienShield a cada equipo
+- [ ] Ejecutar test en cada equipo
+- [ ] Verificar que aparezcan nuevos agentes en Grafana
+- [ ] Documentar IDs de agentes generados
+
+### Después del Despliegue:
+- [ ] Configurar alertas en Grafana para agentes offline
+- [ ] Capacitar usuarios sobre el monitor
+- [ ] Establecer procedimiento para reportar problemas
+- [ ] Programar revisiones periódicas de logs
+
+## 📈 INTERPRETACIÓN DE DATOS
+
+### En Grafana verás:
+- **Total Conexiones**: Actividad web total del equipo
+- **Dominios Únicos**: Variedad de sitios visitados  
+- **Navegadores Activos**: Procesos de navegador ejecutándose
+- **Top Dominios**: Sitios más visitados por conexiones
+- **Categorías**: Distribución por tipo de sitio (work, social, etc.)
+
+### Casos de Uso Típicos:
+- **Productividad**: Monitorear trabajo vs entretenimiento
+- **Seguridad**: Detectar conexiones a sitios maliciosos
+- **Capacidad**: Planificar ancho de banda por uso real
+- **Compliance**: Auditar cumplimiento de políticas web
+
+---
+
+🔗 **Enlaces Útiles**:
+- Dashboard Grafana: http://194.164.172.92:3000
+- Servidor Prometheus: http://194.164.172.92:9090  
+- Python Download: https://python.org/downloads
+
+📞 **Soporte**: Contactar al administrador del sistema ZienShield

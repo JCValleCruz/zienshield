@@ -7,6 +7,9 @@ require('dotenv').config();
 // Importar servicio de actualización de vulnerabilidades
 const { startVulnerabilityUpdateService } = require('./services/vulnerabilityUpdateService');
 
+// Importar servicio de métricas
+const { httpMetricsMiddleware } = require('./services/metricsService');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 
@@ -38,6 +41,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname, {setHeaders: function(res) {res.setHeader("Content-Type", "text/html; charset=utf-8");}}));
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware de métricas (antes de las rutas)
+app.use(httpMetricsMiddleware);
+
 // Rutas principales
 app.use('/api/companies', require('./routes/companies'));
 app.use('/api/auth', require('./routes/auth'));
@@ -46,6 +52,15 @@ app.use("/api/company", require("./routes/company-stats"));
 app.use("/api/company", require("./routes/vulnerabilities"));
 app.use('/api/system/server-metrics', require('./routes/server-metrics'));
 app.use('/api/sync', require('./routes/sync'));
+
+// Rutas de métricas de Prometheus
+app.use('/', require('./routes/metrics'));
+
+// Rutas de tráfico web
+app.use('/api/web-traffic', require('./routes/web-traffic'));
+
+// Rutas de monitoreo de equipos
+app.use('/api/equipment', require('./routes/equipment-monitoring'));
 
 // Endpoint de salud
 app.get('/api/health', (req, res) => {

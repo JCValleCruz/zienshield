@@ -1,0 +1,235 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ZienShield - Tráfico Web y Navegación",
+    "tags": ["zienshield", "web-traffic", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Conexiones Web Totales",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(zienshield_web_domain_connections_total)",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1000},
+                {"color": "red", "value": 5000}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Dominios Únicos Activos",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_web_unique_domains",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "blue", "value": null}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Navegadores Activos",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(zienshield_web_active_browsers)",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 20}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Agentes Monitoreando",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "zienshield_web_active_agents",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "red", "value": 0}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "Top Dominios por Conexiones",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "topk(10, zienshield_web_domain_connections_total)",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{domain}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Conexiones por Categoría",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "zienshield_web_category_connections_total",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{category}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 7,
+        "title": "Tiempo de Sesión por Dominio (P95)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(zienshield_web_domain_session_seconds_bucket[5m]))",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{domain}} ({{category}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Navegadores por Agente",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "zienshield_web_active_browsers",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{agent}} - {{browser}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 9,
+        "title": "Actividad Web por Hora",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "zienshield_web_hourly_activity",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Rate de Nuevas Conexiones",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "zienshield_web_connection_rate",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{agent}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "cps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 11,
+        "title": "Puertos Únicos por Dominio",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "zienshield_web_domain_unique_ports",
+            "format": "time_series",
+            "refId": "A",
+            "legendFormat": "{{domain}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "schemaVersion": 16,
+    "version": 0
+  }
+}

@@ -1,0 +1,20 @@
+🛡️ ZIENSHIELD WEB MONITOR - INSTALACIÓN RÁPIDA
+
+📋 PASOS:
+1. Hacer doble clic en "ZienShield-Monitor.bat"
+2. Seleccionar opción 1 (Monitoreo continuo)
+3. ¡Listo! El monitor enviará datos a ZienShield
+
+📊 VERIFICAR:
+- Dashboard Grafana: http://194.164.172.92:3000
+- Logs locales: ~/Documents/ZienShield/
+
+⚠️ REQUISITOS:
+- Python 3.7+ instalado
+- Conexión a Internet
+- Ejecutar "pip install requests"
+
+📞 SOPORTE: Administrador del sistema ZienShield
+
+---
+Generado: 2025-07-24 16:02:12
