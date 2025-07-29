@@ -31,4 +31,84 @@ router.get('/:tenantId/devices', getAllCompanyDevices);
 // Busca un CVE en la base de datos de INCIBE y devuelve la URL específica
 router.get('/:tenantId/cve/:cve/incibe', searchCVEInIncibe);
 
+// RUTAS DE ANÁLISIS (Seguridad Windows)
+// GET /api/company/:tenantId/analysis/alerts
+router.get('/:tenantId/analysis/alerts', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    
+    // Retornar datos simulados de alertas por ahora
+    const alerts = {
+      recent_alerts: [
+        {
+          id: 1,
+          type: "Windows Defender",
+          severity: "high",
+          message: "Amenaza detectada y bloqueada",
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          device: "pc-axafone-kevin"
+        },
+        {
+          id: 2,
+          type: "Firewall",
+          severity: "medium",
+          message: "Conexión sospechosa bloqueada",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          device: "pc-axafone-jcvalle"
+        }
+      ],
+      total_alerts: 15,
+      high_severity: 3,
+      medium_severity: 7,
+      low_severity: 5
+    };
+    
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    console.error('Error obteniendo alertas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/company/:tenantId/analysis/vulnerabilities
+router.get('/:tenantId/analysis/vulnerabilities', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    
+    // Retornar datos simulados de vulnerabilidades por ahora
+    const vulnerabilities = {
+      recent_vulnerabilities: [
+        {
+          cve: "CVE-2024-1234",
+          severity: "critical",
+          description: "Vulnerabilidad crítica en Windows Kernel",
+          affected_devices: 3,
+          status: "pending",
+          discovered: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
+        },
+        {
+          cve: "CVE-2024-5678",
+          severity: "high",
+          description: "Escalación de privilegios en Windows",
+          affected_devices: 5,
+          status: "in_progress",
+          discovered: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
+        }
+      ],
+      summary: {
+        total: 25,
+        critical: 4,
+        high: 12,
+        medium: 7,
+        low: 2
+      }
+    };
+    
+    res.json({ success: true, data: vulnerabilities });
+  } catch (error) {
+    console.error('Error obteniendo vulnerabilidades:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

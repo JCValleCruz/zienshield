@@ -21,20 +21,99 @@ mockAgents.set('agent-windows-001', {
   }
 });
 
-// Función para obtener IP pública (simulada)
-const getPublicIP = () => {
-  // En producción, esto se obtendría del agente o mediante geolocalización IP
-  const publicIPs = [
-    '194.164.172.92',
-    '203.0.113.45',
-    '198.51.100.78',
-    '172.16.0.15'
+// Función para obtener IP pública real del agente conectado
+const getPublicIP = (req) => {
+  // Obtener IP real de la conexión
+  let clientIP = req.ip || 
+                req.connection.remoteAddress || 
+                req.socket.remoteAddress ||
+                (req.connection.socket ? req.connection.socket.remoteAddress : null);
+                
+  // Limpiar formato IPv6 si existe
+  if (clientIP && clientIP.substr(0, 7) === "::ffff:") {
+    clientIP = clientIP.substr(7);
+  }
+  
+  // Si es IP local/privada, simular IP pública para desarrollo
+  if (!clientIP || clientIP === '127.0.0.1' || clientIP.startsWith('192.168.') || 
+      clientIP.startsWith('10.') || clientIP.startsWith('172.')) {
+    const publicIPs = [
+      '194.164.172.92',
+      '203.0.113.45', 
+      '198.51.100.78',
+      '172.16.0.15'
+    ];
+    return publicIPs[Math.floor(Math.random() * publicIPs.length)];
+  }
+  
+  return clientIP;
+};
+
+// Función para generar información de red detallada
+const generateNetworkInfo = () => {
+  const privateNetworks = [
+    { subnet: '192.168.1.0/24', gateway: '192.168.1.1', dns: ['192.168.1.1', '8.8.8.8'] },
+    { subnet: '192.168.0.0/24', gateway: '192.168.0.1', dns: ['192.168.0.1', '1.1.1.1'] },
+    { subnet: '10.0.0.0/8', gateway: '10.0.0.1', dns: ['10.0.0.1', '8.8.4.4'] },
+    { subnet: '172.16.0.0/16', gateway: '172.16.0.1', dns: ['172.16.0.1', '9.9.9.9'] }
   ];
-  return publicIPs[Math.floor(Math.random() * publicIPs.length)];
+  
+  const network = privateNetworks[Math.floor(Math.random() * privateNetworks.length)];
+  const subnetParts = network.subnet.split('/')[0].split('.');
+  const randomHost = Math.floor(Math.random() * 200) + 10;
+  
+  const interfaces = ['Ethernet', 'Wi-Fi'];
+  const interfaceType = interfaces[Math.floor(Math.random() * interfaces.length)];
+  
+  // Velocidades típicas por tipo de interfaz
+  const speeds = {
+    'Ethernet': [100, 1000, 10000], // Mbps
+    'Wi-Fi': [54, 150, 300, 600, 1200] // Mbps
+  };
+  
+  const speed = speeds[interfaceType][Math.floor(Math.random() * speeds[interfaceType].length)];
+  
+  return {
+    private_ip: `${subnetParts[0]}.${subnetParts[1]}.${subnetParts[2]}.${randomHost}`,
+    subnet: network.subnet,
+    gateway: network.gateway,
+    dns_servers: network.dns,
+    interface_name: interfaceType,
+    interface_type: interfaceType.toLowerCase(),
+    link_speed_mbps: speed,
+    mac_address: generateMacAddress(),
+    dhcp_enabled: Math.random() > 0.2, // 80% DHCP
+    connection_type: interfaceType === 'Ethernet' ? 'wired' : 'wireless'
+  };
+};
+
+const generateMacAddress = () => {
+  const hexChars = '0123456789ABCDEF';
+  let mac = '';
+  for (let i = 0; i < 6; i++) {
+    if (i > 0) mac += ':';
+    mac += hexChars[Math.floor(Math.random() * 16)];
+    mac += hexChars[Math.floor(Math.random() * 16)];
+  }
+  return mac;
+};
+
+// Función para clasificar tipo de red
+const classifyNetworkLocation = (publicIP, privateIP, gateway) => {
+  // Lógica para determinar ubicación
+  const isVPN = privateIP.startsWith('10.') && !gateway.startsWith('10.0.0.');
+  const isOffice = publicIP === '194.164.172.92'; // IP conocida de oficina
+  const isRemote = !isVPN && !isOffice;
+  
+  if (isVPN) return { type: 'vpn', description: 'Conexión VPN' };
+  if (isOffice) return { type: 'office', description: 'Red de Oficina' };
+  if (isRemote) return { type: 'remote', description: 'Trabajo Remoto' };
+  
+  return { type: 'unknown', description: 'Red Desconocida' };
 };
 
 // Función para generar métricas realistas
-const generateRealisticMetrics = (agentId, hostname) => {
+const generateRealisticMetrics = (agentId, hostname, req = null) => {
   const baseTime = Date.now();
   
   // Dominios más comunes por categoría
@@ -136,7 +215,8 @@ const generateRealisticMetrics = (agentId, hostname) => {
     domain_stats: selectedDomains,
     browser_processes: browserProcesses,
     system_metrics: systemMetrics,
-    public_ip: getPublicIP(),
+    public_ip: getPublicIP(req),
+    network_info: generateNetworkInfo(),
     top_domains: Object.entries(selectedDomains)
       .map(([domain, data]) => [domain, data.connections])
       .sort((a, b) => b[1] - a[1])
@@ -149,6 +229,12 @@ const generateRealisticMetrics = (agentId, hostname) => {
     status: Math.random() > 0.05 ? 'online' : Math.random() > 0.7 ? 'warning' : 'offline',
     last_update: new Date().toISOString()
   };
+  
+  // Agregar clasificación de red
+  const networkInfo = result.network_info;
+  result.network_classification = classifyNetworkLocation(result.public_ip, networkInfo.private_ip, networkInfo.gateway);
+  
+  return result;
 };
 
 const getRandomProcesses = () => {
@@ -213,7 +299,7 @@ router.get('/agents', async (req, res) => {
     
     const agents = allAgents.map(agent => ({
       ...agent,
-      ...generateRealisticMetrics(agent.agent_id, agent.hostname)
+      ...generateRealisticMetrics(agent.agent_id, agent.hostname, req)
     }));
 
     res.json({
@@ -255,7 +341,7 @@ router.get('/agents/:agentId', async (req, res) => {
       });
     }
 
-    const metrics = generateRealisticMetrics(agent.agent_id, agent.hostname);
+    const metrics = generateRealisticMetrics(agent.agent_id, agent.hostname, req);
 
     res.json({
       success: true,

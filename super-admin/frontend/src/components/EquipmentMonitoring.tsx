@@ -19,8 +19,6 @@ import {
   Zap,
   Users
 } from 'lucide-react';
-import NetworkTrafficAnalysis from './NetworkTrafficAnalysis';
-import WebMonitoringGrid from './WebMonitoringGrid';
 
 interface SystemMetrics {
   cpu_percent: number;
@@ -58,6 +56,9 @@ interface AgentData {
   }>;
   system_metrics: SystemMetrics;
   public_ip?: string;
+  private_ip?: string;
+  firewall_active?: boolean;
+  antivirus_active?: boolean;
   top_domains: Array<[string, number]>;
   domains_by_transfer?: Array<[string, number]>;
   category_summary: {
@@ -84,7 +85,6 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline' | 'warning'>('all');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'webmonitoring'>('overview');
 
   // Mock data para demostración
   const generateMockAgent = (id: string, hostname: string): AgentData => {
@@ -123,7 +123,10 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
         social: { domains: 1, connections: 2 }
       },
       status: Math.random() > 0.1 ? 'online' : Math.random() > 0.5 ? 'warning' : 'offline',
-      last_update: new Date().toISOString()
+      last_update: new Date().toISOString(),
+      private_ip: `192.168.1.${Math.floor(Math.random() * 254) + 1}`,
+      firewall_active: Math.random() > 0.2, // 80% tienen firewall activo
+      antivirus_active: Math.random() > 0.3  // 70% tienen antivirus activo
     };
   };
 
@@ -193,7 +196,7 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
     };
 
     return (
-      <div className="relative w-20 h-20 mx-auto">
+      <div className="relative w-16 h-16 mx-auto">
         {/* Etiqueta arriba */}
         <div className="text-center mb-1">
           <div className="text-xs text-gray-400">{label}</div>
@@ -249,24 +252,23 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
     };
 
     return (
-      <div className={`rounded-xl border p-6 ${getStatusColor(agent.status || 'online')} backdrop-blur-sm`}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <Monitor className="w-6 h-6 text-blue-400" />
+      <div className={`rounded-xl border p-4 ${getStatusColor(agent.status || 'online')} backdrop-blur-sm`}>
+        {/* Header compacto */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <Monitor className="w-5 h-5 text-blue-400" />
             <div>
-              <h3 className="text-lg font-semibold text-white">{agent.hostname}</h3>
-              <p className="text-sm text-gray-400">{agent.agent_id}</p>
+              <h3 className="text-sm font-semibold text-white truncate">{agent.hostname}</h3>
+              <p className="text-xs text-gray-400">{agent.agent_id}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             {getStatusIcon(agent.status || 'online')}
-            <span className="text-sm text-gray-300 capitalize">{agent.status}</span>
           </div>
         </div>
 
-        {/* Velocímetros del sistema */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        {/* Velocímetros del sistema compactos */}
+        <div className="grid grid-cols-3 gap-1 mb-4">
           <SpeedometerGauge
             value={agent.system_metrics.cpu_percent}
             max={100}
@@ -290,52 +292,77 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
           />
         </div>
 
-        {/* Métricas de red */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Network className="w-4 h-4 text-blue-400" />
-              <span className="text-sm text-gray-300">Conexiones</span>
-            </div>
-            <div className="text-xl font-bold text-white">{agent.total_connections}</div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Globe className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-gray-300">Dominios</span>
-            </div>
-            <div className="text-xl font-bold text-white">{agent.total_domains}</div>
-          </div>
-        </div>
-
-        {/* Dominios por transferencia */}
-        <div className="mb-4">
-          <h4 className="text-sm font-medium text-gray-300 mb-2">Dominios por Transferencia</h4>
-          <div className="space-y-1">
-            {(agent.domains_by_transfer || agent.top_domains).slice(0, 3).map(([domain, value]) => (
-              <div key={domain} className="flex justify-between items-center text-sm">
-                <span className="text-gray-300 truncate">{domain}</span>
-                <span className="text-green-400 font-medium">
-                  {agent.domains_by_transfer ? `${value} GB` : `${value}`}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* IP Pública */}
-        <div className="mb-4">
-          <h4 className="text-sm font-medium text-gray-300 mb-2">IP Pública</h4>
+        {/* Barras de velocidad de red */}
+        <div className="mb-3">
           <div className="bg-gray-800/50 rounded-lg p-2">
-            <span className="text-blue-400 font-mono text-sm">
-              {agent.public_ip || '194.164.172.92'}
-            </span>
+            <div className="flex items-center justify-between text-xs text-gray-300 mb-1">
+              <span>🔼 Upload</span>
+              <span>{(agent.system_metrics.network_sent / 1024 / 1024).toFixed(1)} MB/s</span>
+            </div>
+            <div className="bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min((agent.system_metrics.network_sent / 10000000) * 100, 100)}%` }}
+              ></div>
+            </div>
+          </div>
+          <div className="bg-gray-800/50 rounded-lg p-2 mt-1">
+            <div className="flex items-center justify-between text-xs text-gray-300 mb-1">
+              <span>🔽 Download</span>
+              <span>{(agent.system_metrics.network_recv / 1024 / 1024).toFixed(1)} MB/s</span>
+            </div>
+            <div className="bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min((agent.system_metrics.network_recv / 10000000) * 100, 100)}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 
-        {/* Tiempo de sesión */}
-        <div className="text-xs text-gray-400">
-          Sesión: {Math.floor(agent.session_duration_minutes / 60)}h {Math.floor(agent.session_duration_minutes % 60)}m
+        {/* IPs y Seguridad */}
+        <div className="mb-3">
+          {/* IPs */}
+          <div className="grid grid-cols-2 gap-1 mb-2">
+            <div className="bg-gray-800/50 rounded p-1">
+              <div className="text-xs text-gray-400">IP Privada</div>
+              <div className="text-xs text-blue-400 font-mono">{agent.private_ip || '192.168.1.100'}</div>
+            </div>
+            <div className="bg-gray-800/50 rounded p-1">
+              <div className="text-xs text-gray-400">IP Pública</div>
+              <div className="text-xs text-green-400 font-mono">{agent.public_ip || '194.164.172.92'}</div>
+            </div>
+          </div>
+          
+          {/* Indicadores de Seguridad */}
+          <div className="grid grid-cols-2 gap-1">
+            <div className="bg-gray-800/50 rounded p-1 flex items-center justify-between">
+              <span className="text-xs text-gray-300">🛡️ Firewall</span>
+              <div className={`w-2 h-2 rounded-full ${agent.firewall_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            </div>
+            <div className="bg-gray-800/50 rounded p-1 flex items-center justify-between">
+              <span className="text-xs text-gray-300">🦠 Antivirus</span>
+              <div className={`w-2 h-2 rounded-full ${agent.antivirus_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Métricas Especiales para pc-axafone-jvalle (Prometheus) */}
+        {agent.hostname === 'pc-axafone-jvalle' && (
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-2 mb-2">
+            <div className="text-xs text-purple-400 mb-1">📊 Prometheus Metrics</div>
+            <div className="grid grid-cols-2 gap-1 text-xs">
+              <div className="text-gray-300">Uptime: 2d 14h</div>
+              <div className="text-gray-300">Temp: 45°C</div>
+              <div className="text-gray-300">Processes: 234</div>
+              <div className="text-gray-300">Load: 1.2</div>
+            </div>
+          </div>
+        )}
+
+        {/* Info de sesión */}
+        <div className="text-xs text-gray-400 text-center">
+          {Math.floor(agent.session_duration_minutes / 60)}h {Math.floor(agent.session_duration_minutes % 60)}m online
         </div>
       </div>
     );
@@ -359,50 +386,6 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Pestañas de navegación */}
-      <div className="flex items-center space-x-1 bg-gray-800/50 rounded-lg p-1 border border-gray-700/30">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
-            activeTab === 'overview'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-          }`}
-        >
-          <Monitor className="w-4 h-4" />
-          <span>Vista General</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('traffic')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
-            activeTab === 'traffic'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>Análisis de Tráfico</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('webmonitoring')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
-            activeTab === 'webmonitoring'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          <span>Monitoreo Web</span>
-        </button>
-      </div>
-
-      {/* Contenido según pestaña activa */}
-      {activeTab === 'traffic' ? (
-        <NetworkTrafficAnalysis />
-      ) : activeTab === 'webmonitoring' ? (
-        <WebMonitoringGrid />
-      ) : (
-        <>
       {/* Filtros */}
       <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30">
         <div className="flex flex-wrap items-center gap-4">
@@ -487,7 +470,7 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
           <span className="ml-2 text-gray-400">Cargando equipos...</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredAgents.map((agent) => (
             <AgentCard key={agent.agent_id} agent={agent} />
           ))}
@@ -507,8 +490,6 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
             </p>
           </div>
         )}
-        </>
-      )}
     </div>
   );
 };

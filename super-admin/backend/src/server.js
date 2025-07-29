@@ -62,6 +62,9 @@ app.use('/api/web-traffic', require('./routes/web-traffic'));
 // Rutas de monitoreo de equipos
 app.use('/api/equipment', require('./routes/equipment-monitoring'));
 
+// Rutas de seguridad Windows
+app.use('/api/windows-security', require('./routes/windows-security'));
+
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({ 
