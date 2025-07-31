@@ -1,0 +1,77 @@
+# =================================================================
+# ZIENSHIELD BACKEND - DOCKERFILE OPTIMIZADO PARA PRODUCCIÓN
+# =================================================================
+
+FROM node:18-alpine AS base
+
+# Metadata
+LABEL maintainer="ZienShield Team"
+LABEL description="ZienShield Security Platform - Backend API"
+LABEL version="1.0.0"
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Configurar timezone
+ENV TZ=Europe/Madrid
+
+# Crear usuario no-root para seguridad
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# =================================================================
+# STAGE 2: DEPENDENCY INSTALLATION
+# =================================================================
+
+FROM base AS dependencies
+
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY backend-unified/package*.json ./
+
+# Instalar dependencias de producción
+RUN npm ci --only=production --silent && \
+    npm cache clean --force
+
+# =================================================================
+# STAGE 3: BUILD & RUNTIME
+# =================================================================
+
+FROM base AS runtime
+
+WORKDIR /app
+
+# Copiar dependencias desde stage anterior
+COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copiar código fuente
+COPY --chown=nodejs:nodejs backend-unified/src ./src
+COPY --chown=nodejs:nodejs backend-unified/package*.json ./
+
+# Crear directorios necesarios
+RUN mkdir -p /app/logs && \
+    chown -R nodejs:nodejs /app/logs
+
+# Cambiar a usuario no-root
+USER nodejs
+
+# Exponer puerto
+EXPOSE 3001
+
+# Variables de entorno por defecto
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV HOST=0.0.0.0
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1
+
+# Comando de inicio con dumb-init para manejo de señales
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "src/server.js"]
