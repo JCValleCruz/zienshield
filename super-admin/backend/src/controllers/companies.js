@@ -41,10 +41,21 @@ const createCompany = async (req, res) => {
     const { company_name, admin_email, admin_password, sector, admin_phone } = req.body;
 
     // Validar datos requeridos
-    if (!company_name || !admin_email || !admin_password) {
+    if (!company_name || !admin_email) {
       return res.status(400).json({
         success: false,
-        error: 'Faltan campos obligatorios'
+        error: 'Errores de validación en datos de empresa',
+        details: ['El nombre de la empresa y email del administrador son obligatorios']
+      });
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(admin_email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Errores de validación en datos de empresa',
+        details: ['El formato del email no es válido']
       });
     }
 
@@ -62,7 +73,8 @@ const createCompany = async (req, res) => {
     }
 
     // Generar tenant_id único
-    const tenant_id = `${company_name.toLowerCase().replace(/\s+/g, '-')}-${sector.toLowerCase().substring(0, 3)}-${Math.random().toString(36).substring(2, 8)}`;
+    const safeSector = (sector || 'company').toLowerCase().substring(0, 3);
+    const tenant_id = `${company_name.toLowerCase().replace(/\s+/g, '-')}-${safeSector}-${Math.random().toString(36).substring(2, 8)}`;
 
     // Insertar empresa con la estructura real
     const insertQuery = `
@@ -73,7 +85,12 @@ const createCompany = async (req, res) => {
     `;
 
     const result = await pool.query(insertQuery, [
-      company_name, admin_email, admin_password, sector, admin_phone, tenant_id
+      company_name, 
+      admin_email, 
+      admin_password || 'password123', 
+      sector || 'OTHER', 
+      admin_phone || '+34 000 000 000', 
+      tenant_id
     ]);
 
     res.status(201).json({
@@ -93,6 +110,120 @@ const createCompany = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error creando empresa'
+    });
+  }
+};
+
+// Actualizar empresa
+const updateCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    console.log(`✏️ Actualizando empresa ID: ${id}`, updateData);
+
+    // Verificar que la empresa existe
+    const companyCheck = await pool.query(
+      'SELECT id, name, admin_email FROM companies WHERE id = $1',
+      [id]
+    );
+
+    if (companyCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Empresa no encontrada'
+      });
+    }
+
+    const currentCompany = companyCheck.rows[0];
+
+    // Verificar unicidad de email si se está cambiando
+    if (updateData.admin_email && updateData.admin_email !== currentCompany.admin_email) {
+      const emailCheck = await pool.query(
+        'SELECT id FROM companies WHERE admin_email = $1 AND id != $2',
+        [updateData.admin_email, id]
+      );
+
+      if (emailCheck.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: 'Ya existe otra empresa con este email de administrador'
+        });
+      }
+    }
+
+    // Construir query de actualización dinámica
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 0;
+
+    // Campos que se pueden actualizar
+    const allowedFields = ['name', 'sector', 'admin_name', 'admin_phone', 'admin_email'];
+
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined && updateData[field] !== null) {
+        paramCount++;
+        updateFields.push(`${field} = $${paramCount}`);
+        updateValues.push(updateData[field].toString().trim());
+      }
+    });
+
+    // Manejo especial para password (solo si se proporciona)
+    if (updateData.admin_password && updateData.admin_password.trim()) {
+      paramCount++;
+      updateFields.push(`admin_password = $${paramCount}`);
+      updateValues.push(updateData.admin_password.trim());
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se proporcionaron campos válidos para actualizar'
+      });
+    }
+
+    // Añadir timestamp de actualización
+    paramCount++;
+    updateFields.push(`updated_at = $${paramCount}`);
+    updateValues.push(new Date());
+
+    // Añadir ID para WHERE clause
+    paramCount++;
+    updateValues.push(id);
+
+    const updateQuery = `
+      UPDATE companies
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING
+        id, name, sector, tenant_id, admin_name, admin_email,
+        wazuh_group, created_at, updated_at
+    `;
+
+    const result = await pool.query(updateQuery, updateValues);
+    const updatedCompany = result.rows[0];
+
+    console.log(`✅ Empresa actualizada: ${updatedCompany.name} (ID: ${id})`);
+
+    res.json({
+      success: true,
+      message: `Empresa "${updatedCompany.name}" actualizada exitosamente`,
+      data: updatedCompany
+    });
+
+  } catch (error) {
+    console.error('❌ Error actualizando empresa:', error);
+
+    if (error.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        error: 'Ya existe una empresa con estos datos únicos'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Error interno actualizando la empresa'
     });
   }
 };
@@ -135,5 +266,6 @@ const deleteCompany = async (req, res) => {
 module.exports = {
   getAllCompanies,
   createCompany,
+  updateCompany,
   deleteCompany
 };

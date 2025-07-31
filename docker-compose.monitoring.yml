@@ -24,7 +24,7 @@ services:
     image: grafana/grafana:latest
     container_name: zienshield-grafana
     ports:
-      - "0.0.0.0:3002:3000"
+      - "0.0.0.0:3004:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning

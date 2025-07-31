@@ -1,21 +1,27 @@
 module.exports = {
   apps: [
     {
-      name: 'zienshield-backend',
-      cwd: './super-admin/backend',
-      script: 'npm',
-      args: 'start',
+      name: 'zienshield-backend-unified',
+      cwd: './backend-unified',
+      script: 'src/server.js',
       env: {
+        NODE_ENV: 'development',
+        PORT: 3001,
+        HOST: '0.0.0.0'
+      },
+      env_production: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 3001,
+        HOST: '0.0.0.0'
       },
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
-      error_file: './logs/backend-error.log',
-      out_file: './logs/backend-out.log',
-      log_file: './logs/backend-combined.log',
+      max_memory_restart: '500M',
+      error_file: './logs/backend-unified-error.log',
+      out_file: './logs/backend-unified-out.log',
+      log_file: './logs/backend-unified-combined.log',
       time: true
     },
     {

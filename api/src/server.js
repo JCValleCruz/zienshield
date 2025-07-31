@@ -2,28 +2,21 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const crypto = require('crypto');
+require('dotenv').config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-// Configuración de CORS más permisiva para desarrollo
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://194.164.172.92:3000', 'http://194.164.172.92'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Configuración de CORS centralizada
+const corsConfig = require('../../shared/config/cors');
+app.use(cors(corsConfig.getCorsConfig()));
 
 app.use(express.json());
 
-// Configuración de PostgreSQL con usuario específico
-const pool = new Pool({
-  user: 'zienshield_api',
-  host: 'localhost',
-  database: 'zienshield_multi_tenant',
-  password: 'ZienAPI2025!',
-  port: 5432,
-});
+// Configuración de PostgreSQL optimizada
+const { Pool } = require('pg');
+const { createPool } = require('../../shared/config/database');
+const pool = createPool(Pool);
 
 // Test de conexión al iniciar
 async function testConnection() {
@@ -687,7 +680,7 @@ app.get('/api/auth/auto-login/:token', async (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, async () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log('🚀 ZienSHIELD API iniciando...');
   console.log(`📡 Servidor corriendo en puerto ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);

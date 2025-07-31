@@ -26,13 +26,9 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// CORS
+// CORS simple para debug
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://194.164.172.92:3000',
-    'http://localhost:3000'
-  ],
+  origin: ['http://localhost:3000', 'http://194.164.172.92:3000'],
   credentials: true
 }));
 
