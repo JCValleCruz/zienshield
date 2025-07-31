@@ -1746,10 +1746,10 @@ const extractCVSSVector = (cveRecord: any) => {
 
  const getStatusColor = (status: string) => {
    switch(status) {
-     case 'good': return 'text-green-400 bg-green-900/20 border-green-500/30';
-     case 'warning': return 'text-yellow-400 bg-yellow-900/20 border-yellow-500/30';
-     case 'critical': return 'text-red-400 bg-red-900/20 border-red-500/30';
-     default: return 'text-gray-400 bg-gray-900/20 border-gray-500/30';
+     case 'good': return 'text-success-700 bg-success-50 border-success-200';
+     case 'warning': return 'text-warning-700 bg-warning-50 border-warning-200';
+     case 'critical': return 'text-danger-700 bg-danger-50 border-danger-200';
+     default: return 'text-gray-700 bg-gray-50 border-gray-200';
    }
  };
 
@@ -3107,81 +3107,81 @@ const extractCVSSVector = (cveRecord: any) => {
      return (
        <>
          {/* Estado Principal - Semáforo */}
-         <div className={`rounded-xl p-8 mb-8 border-2 ${getStatusColor(dashboardData.securityStatus)}`}>
+         <div className={`elstar-card p-8 mb-8 border-2 ${getStatusColor(dashboardData.securityStatus)}`}>
            <div className="flex items-center space-x-4">
              {getStatusIcon(dashboardData.securityStatus)}
              <div>
                <h2 className="text-2xl font-bold">
                  {getStatusMessage(dashboardData.securityStatus)}
                </h2>
-               <p className="text-lg opacity-80">
+               <div className="text-lg opacity-80">
                  {dashboardData.lastUpdate === '' ? (
                    <div className="animate-pulse bg-gray-600 h-6 w-32 rounded"></div>
                  ) : (
                    `${dashboardData.connectedDevices}/${dashboardData.totalDevices} equipos protegidos`
                  )}
-               </p>
+               </div>
              </div>
            </div>
          </div>
 
          {/* Métricas Principales - 4 en fila */}
-         <div className="grid grid-cols-4 gap-6 mb-8">
+         <div className="elstar-metric-grid mb-8">
            {/* Amenazas Bloqueadas */}
-           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+           <div className="elstar-stat-card">
              <div className="flex items-center justify-between mb-4">
-               <Shield className="w-8 h-8 text-blue-400" />
-               <span className="text-sm text-gray-400">Últimas 24h</span>
+               <Shield className="w-8 h-8 text-primary-600" />
+               <span className="text-sm text-gray-500">Últimas 24h</span>
              </div>
-             <div className="text-4xl font-bold text-blue-400 mb-2">
+             <div className="elstar-stat-value text-primary-600 mb-2">
                {dashboardData.lastUpdate === '' ? (
-                 <div className="animate-pulse bg-gray-600 h-10 w-8 rounded mx-auto"></div>
+                 <div className="elstar-skeleton h-10 w-8 mx-auto"></div>
                ) : (
                  dashboardData.threatsBlocked
                )}
              </div>
-             <div className="text-gray-300 text-lg">Amenazas bloqueadas</div>
-             <div className="text-sm text-green-400 mt-2">
+             <div className="elstar-stat-label text-lg">Amenazas bloqueadas</div>
+             <div className="text-sm text-success-600 mt-2">
                ZienSHIELD protección activa
              </div>
            </div>
 
            {/* Equipos con Problemas */}
-           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+           <div className="elstar-stat-card">
              <div className="flex items-center justify-between mb-4">
-               <AlertTriangle className="w-8 h-8 text-orange-400" />
-               <span className="text-sm text-gray-400">Críticos</span>
+               <AlertTriangle className="w-8 h-8 text-warning-600" />
+               <span className="text-sm text-gray-500">Críticos</span>
              </div>
-             <div className="text-4xl font-bold text-orange-400 mb-2">
+             <div className="elstar-stat-value text-warning-600 mb-2">
                {dashboardData.lastUpdate === '' ? (
-                 <div className="animate-pulse bg-gray-600 h-10 w-8 rounded mx-auto"></div>
+                 <div className="elstar-skeleton h-10 w-8 mx-auto"></div>
                ) : (
                  dashboardData.criticalIssues
                )}
              </div>
-             <div className="text-gray-300 text-lg">Equipos necesitan atención</div>
-             <div className="text-sm text-orange-400 mt-2">
+             <div className="elstar-stat-label text-lg">Equipos necesitan atención</div>
+             <div className="text-sm text-warning-600 mt-2">
                Requiere acción hoy
              </div>
            </div>
 
            {/* Equipos Conectados */}
-           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+           <div className="elstar-stat-card">
              <div className="flex items-center justify-between mb-4">
-               <Users className="w-8 h-8 text-green-400" />
-               <span className="text-sm text-gray-400">Activos</span>
+               <Users className="w-8 h-8 text-success-600" />
+               <span className="text-sm text-gray-500">Activos</span>
              </div>
-             <div className="text-4xl font-bold text-green-400 mb-2">
+             <div className="elstar-stat-value text-success-600 mb-2">
                {dashboardData.lastUpdate === '' ? (
-                 <div className="animate-pulse bg-gray-600 h-10 w-8 rounded mx-auto"></div>
+                 <div className="elstar-skeleton h-10 w-8 mx-auto"></div>
                ) : (
                  dashboardData.connectedDevices
                )}
              </div>
-             <div className="text-gray-300 text-lg">Equipos protegidos</div>
-             <div className="text-sm text-green-400 mt-2">
+             <div className="elstar-stat-label text-lg">Equipos protegidos</div>
+             <div className="text-sm text-success-600 mt-2">
                {dashboardData.lastUpdate === '' ? (
-                 <div className="animate-pulse bg-gray-600 h-4 w-20 rounded"></div>
+                 <div className="elstar-skeleton h-4 w-20"></div>
                ) : (
                  `${dashboardData.totalDevices > 0 ? Math.round((dashboardData.connectedDevices / dashboardData.totalDevices) * 100) : 0}% cobertura`
                )}
@@ -3189,19 +3189,19 @@ const extractCVSSVector = (cveRecord: any) => {
            </div>
 
            {/* Cumplimiento */}
-           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+           <div className="elstar-stat-card">
              <div className="flex items-center justify-between mb-4">
                <FileText className={`w-8 h-8 ${currentSector.color}`} />
-               <span className="text-sm text-gray-400">{currentSector.label}</span>
+               <span className="text-sm text-gray-500">{currentSector.label}</span>
              </div>
-             <div className={`text-4xl font-bold ${currentSector.color} mb-2`}>
+             <div className={`elstar-stat-value ${currentSector.color} mb-2`}>
                {dashboardData.lastUpdate === '' ? (
-                 <div className="animate-pulse bg-gray-600 h-10 w-12 rounded mx-auto"></div>
+                 <div className="elstar-skeleton h-10 w-12 mx-auto"></div>
                ) : (
                  `${dashboardData.compliance}%`
                )}
              </div>
-             <div className="text-gray-300 text-lg">{currentSector.complianceLabel}</div>
+             <div className="elstar-stat-label text-lg">{currentSector.complianceLabel}</div>
              <div className={`text-sm ${currentSector.color} mt-2`}>
                Nivel actual de cumplimiento
              </div>
@@ -3209,17 +3209,17 @@ const extractCVSSVector = (cveRecord: any) => {
          </div>
 
          {/* MODIFICADO: Desglose de Vulnerabilidades CVE - DATOS REALES */}
-         <div className="bg-gray-800 rounded-xl border border-gray-700 mb-8">
-           <div className="grid grid-cols-4 divide-x divide-gray-700">
+         <div className="elstar-card mb-8">
+           <div className="grid grid-cols-4 divide-x divide-gray-200">
              <div className="p-6 text-center">
-               <div className="text-4xl font-bold text-red-400 mb-2">
+               <div className="elstar-stat-value text-danger-600 mb-2">
                  {dashboardData.lastUpdate === '' ? (
-                   <div className="animate-pulse bg-gray-600 h-10 w-8 rounded mx-auto"></div>
+                   <div className="elstar-skeleton h-10 w-8 mx-auto"></div>
                  ) : (
                    dashboardData.vulnerabilities.critical
                  )}
                </div>
-               <div className="text-gray-300 text-lg">Critical - Severity</div>
+               <div className="elstar-stat-label text-lg">Critical - Severity</div>
                {dashboardData.lastUpdate !== '' && dashboardData.vulnerabilities.critical !== 'N/A' && Number(dashboardData.vulnerabilities.critical) > 0 && (
                  <div className="text-xs text-red-400 mt-1">Acción inmediata</div>
                )}
@@ -3479,14 +3479,14 @@ const extractCVSSVector = (cveRecord: any) => {
  }
 
  return (
-   <div className="min-h-screen bg-gray-900 flex">
+   <div className="min-h-screen bg-gray-50 flex">
      {/* Sidebar */}
-     <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+     <div className="w-64 elstar-sidebar flex flex-col">
        {/* Logo */}
-       <div className="p-6 border-b border-gray-700">
+       <div className="p-6 border-b border-gray-200">
          <div className="flex items-center">
-           <Shield className="w-8 h-8 text-blue-500 mr-3" />
-           <span className="text-xl font-bold text-white">ZienSHIELD</span>
+           <Shield className="w-8 h-8 text-primary-600 mr-3" />
+           <span className="text-xl font-bold text-gray-900">ZienSHIELD</span>
          </div>
        </div>
 
@@ -3501,8 +3501,8 @@ const extractCVSSVector = (cveRecord: any) => {
                    onClick={() => handleMenuClick(item.id)}
                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
                      activeSection === item.id
-                       ? 'bg-blue-600 text-white'
-                       : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                       ? 'elstar-nav-item elstar-nav-item-active'
+                       : 'elstar-nav-item'
                    }`}
                  >
                    <div className="flex items-center">
@@ -3526,8 +3526,8 @@ const extractCVSSVector = (cveRecord: any) => {
                            onClick={() => handleMenuClick(subItem.id)}
                            className={`w-full flex items-center px-4 py-2 rounded-lg text-left transition-colors ${
                              activeSection === subItem.id
-                               ? 'bg-blue-500 text-white'
-                               : 'text-gray-400 hover:bg-gray-600 hover:text-white'
+                               ? 'elstar-nav-submenu-item elstar-nav-submenu-item-active'
+                               : 'elstar-nav-submenu-item'
                            }`}
                          >
                            <SubIcon className="w-4 h-4 mr-3" />
@@ -3544,14 +3544,14 @@ const extractCVSSVector = (cveRecord: any) => {
        </nav>
 
        {/* Footer */}
-       <div className="p-4 border-t border-gray-700">
-         <div className="text-sm text-gray-400 mb-4">
-           <p>{user.company_name}</p>
+       <div className="p-4 border-t border-gray-200">
+         <div className="text-sm text-gray-600 mb-4">
+           <p className="font-medium">{user.company_name}</p>
             <p>Tenant: {user.tenant_id}</p>
          </div>
          <button
            onClick={onLogout}
-           className="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+           className="elstar-btn-danger w-full"
          >
            <LogOut className="w-4 h-4 mr-2" />
            Cerrar Sesión
@@ -3562,23 +3562,23 @@ const extractCVSSVector = (cveRecord: any) => {
      {/* Main Content */}
      <div className="flex-1 flex flex-col">
        {/* Header */}
-       <div className="bg-gray-800 border-b border-gray-700 p-6">
+       <div className="elstar-header p-6">
          <div className="flex items-center justify-between">
            <div>
-             <h1 className="text-2xl font-bold text-white">
+             <h1 className="text-2xl font-bold text-gray-900">
                {menuItems.find(item => item.id === activeSection)?.label || 
                 menuItems.find(item => item.submenu?.find(sub => sub.id === activeSection))?.submenu?.find(sub => sub.id === activeSection)?.label || 
                 'Dashboard'}
              </h1>
            </div>
-           <p className="text-gray-400">
+           <p className="text-gray-600">
              Última actualización: {dashboardData.lastUpdate}
            </p>
          </div>
        </div>
 
        {/* Content Area */}
-       <div className="flex-1 p-6">
+       <div className="flex-1 p-6 bg-gray-50">
          {renderContent()}
        </div>
      </div>

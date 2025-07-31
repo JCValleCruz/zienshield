@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Network,
   Zap,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 
 interface SystemMetrics {
@@ -86,74 +87,56 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Mock data para demostración
-  const generateMockAgent = (id: string, hostname: string): AgentData => {
-    const mockDomains = {
-      'google.com': { connections: 5, processes: ['chrome.exe'], ports: [443, 80], category: 'work', last_seen: new Date().toISOString() },
-      'youtube.com': { connections: 3, processes: ['chrome.exe'], ports: [443], category: 'video', last_seen: new Date().toISOString() },
-      'facebook.com': { connections: 2, processes: ['firefox.exe'], ports: [443], category: 'social', last_seen: new Date().toISOString() },
-      'office.com': { connections: 4, processes: ['msedge.exe'], ports: [443], category: 'work', last_seen: new Date().toISOString() },
-      'netflix.com': { connections: 1, processes: ['chrome.exe'], ports: [443], category: 'video', last_seen: new Date().toISOString() }
-    };
-
-    return {
-      agent_id: id,
-      hostname,
-      timestamp: new Date().toISOString(),
-      session_duration_minutes: Math.random() * 480 + 60, // 1-8 horas
-      total_connections: Math.floor(Math.random() * 20) + 5,
-      total_domains: Object.keys(mockDomains).length,
-      active_browsers: Math.floor(Math.random() * 3) + 1,
-      domain_stats: mockDomains,
-      browser_processes: [
-        { browser: 'chrome', pid: 1234, name: 'chrome.exe', cpu_percent: Math.random() * 30, memory_mb: Math.random() * 500 + 200 },
-        { browser: 'firefox', pid: 5678, name: 'firefox.exe', cpu_percent: Math.random() * 20, memory_mb: Math.random() * 300 + 150 }
-      ],
-      system_metrics: {
-        cpu_percent: Math.random() * 100,
-        memory_percent: Math.random() * 100,
-        disk_usage: Math.random() * 100,
-        network_sent: Math.random() * 1000000000,
-        network_recv: Math.random() * 1000000000
-      },
-      top_domains: Object.entries(mockDomains).map(([domain, data]) => [domain, data.connections]),
-      category_summary: {
-        work: { domains: 2, connections: 9 },
-        video: { domains: 2, connections: 4 },
-        social: { domains: 1, connections: 2 }
-      },
-      status: Math.random() > 0.1 ? 'online' : Math.random() > 0.5 ? 'warning' : 'offline',
-      last_update: new Date().toISOString(),
-      private_ip: `192.168.1.${Math.floor(Math.random() * 254) + 1}`,
-      firewall_active: Math.random() > 0.2, // 80% tienen firewall activo
-      antivirus_active: Math.random() > 0.3  // 70% tienen antivirus activo
-    };
-  };
 
   const loadAgentsData = useCallback(async () => {
     setLoading(true);
     try {
-      // Llamada a la API real
-      const response = await fetch('http://194.164.172.92:3001/api/equipment/agents');
+      // Llamada a la API real para obtener agentes de Wazuh
+      const response = await fetch(`http://194.164.172.92:3001/api/wazuh/agents/${user.tenant_id}`);
       const data = await response.json();
       
-      if (data.success) {
-        // Solo usar datos reales de la API
-        setAgents(data.agents);
-        console.log('✅ Agentes cargados desde API:', data.agents.length);
+      if (data.success && data.data && data.data.agents) {
+        // Mapear datos de Wazuh a formato del componente
+        const mappedAgents = data.data.agents.map((agent: any) => ({
+          agent_id: agent.id,
+          hostname: agent.name || `Agent-${agent.id}`,
+          timestamp: new Date().toISOString(),
+          session_duration_minutes: 0, // Calcular desde last_keep_alive
+          total_connections: 0,
+          total_domains: 0,
+          active_browsers: 0,
+          domain_stats: {},
+          browser_processes: [],
+          system_metrics: {
+            cpu_percent: 0,
+            memory_percent: 0,
+            disk_usage: 0,
+            network_sent: 0,
+            network_recv: 0
+          },
+          top_domains: [],
+          category_summary: {},
+          status: agent.status === 'active' ? 'online' : 'offline',
+          last_update: agent.last_keep_alive || new Date().toISOString(),
+          private_ip: agent.ip || 'N/A',
+          public_ip: agent.registerIP || 'N/A',
+          firewall_active: false,
+          antivirus_active: false
+        }));
+        
+        setAgents(mappedAgents);
+        console.log('✅ Agentes Wazuh cargados:', mappedAgents.length);
       } else {
-        console.error('❌ Error from API:', data.error);
-        // No mostrar datos mock, solo mensaje de error
+        console.error('❌ Error from Wazuh API:', data.error);
         setAgents([]);
       }
     } catch (error) {
-      console.error('❌ Error connecting to API:', error);
-      // No mostrar datos mock, solo mensaje de error  
+      console.error('❌ Error connecting to Wazuh API:', error);
       setAgents([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user.tenant_id]);
 
   useEffect(() => {
     loadAgentsData();
@@ -230,6 +213,7 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
       </div>
     );
   };
+
 
   // Componente de tarjeta de agente
   const AgentCard = ({ agent }: { agent: AgentData }) => {
@@ -370,6 +354,7 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -490,6 +475,7 @@ const EquipmentMonitoring: React.FC<EquipmentMonitoringProps> = ({ user }) => {
             </p>
           </div>
         )}
+
     </div>
   );
 };

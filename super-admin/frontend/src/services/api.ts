@@ -200,25 +200,12 @@ class ApiService {
     user: any;
     expires_at: string;
   }>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/impersonate/${tenantId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('zienshield-token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error en impersonación:', error);
-      throw error;
-    }
+    return this.fetchApi(`/auth/impersonate/${tenantId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('zienshield-token')}`,
+      },
+    });
   }
 
   // NUEVO: Método para auto-login con token de impersonación

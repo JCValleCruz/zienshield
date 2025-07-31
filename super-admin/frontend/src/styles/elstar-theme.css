@@ -1,0 +1,432 @@
+/* Elstar-inspired Light Theme for ZienShield */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* CSS Variables for Light Theme */
+:root {
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-hover: #f8fafc;
+  
+  /* Text Colors */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  /* Border Colors */
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --border-focus: #3b82f6;
+  
+  /* Brand Colors */
+  --brand-primary: #3b82f6;
+  --brand-primary-hover: #2563eb;
+  --brand-primary-light: #eff6ff;
+  
+  /* Status Colors */
+  --success: #22c55e;
+  --success-light: #f0fdf4;
+  --success-border: #bbf7d0;
+  
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+  
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --danger-border: #fecaca;
+  
+  --info: #06b6d4;
+  --info-light: #f0fdfa;
+  --info-border: #a7f3d0;
+  
+  /* Shadow Variables */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Elstar Component Classes */
+  /* Card Components */
+  .elstar-card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-200;
+  }
+  
+  .elstar-card-body {
+    @apply p-6;
+  }
+  
+  .elstar-card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl;
+  }
+  
+  .elstar-card-compact {
+    @apply bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-4;
+  }
+  
+  /* Button Components */
+  .elstar-btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+  }
+  
+  .elstar-btn-primary {
+    @apply elstar-btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .elstar-btn-secondary {
+    @apply elstar-btn bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
+  }
+  
+  .elstar-btn-success {
+    @apply elstar-btn bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+  }
+  
+  .elstar-btn-danger {
+    @apply elstar-btn bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500;
+  }
+  
+  .elstar-btn-ghost {
+    @apply elstar-btn bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500;
+  }
+  
+  /* Input Components */
+  .elstar-input {
+    @apply block w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+  }
+  
+  .elstar-input-group {
+    @apply relative flex items-center;
+  }
+  
+  .elstar-input-icon {
+    @apply absolute left-3 text-gray-400;
+  }
+  
+  .elstar-input-with-icon {
+    @apply elstar-input pl-10;
+  }
+  
+  /* Status Indicators */
+  .elstar-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .elstar-badge-success {
+    @apply elstar-badge bg-success-100 text-success-800 border border-success-200;
+  }
+  
+  .elstar-badge-warning {
+    @apply elstar-badge bg-warning-100 text-warning-800 border border-warning-200;
+  }
+  
+  .elstar-badge-danger {
+    @apply elstar-badge bg-danger-100 text-danger-800 border border-danger-200;
+  }
+  
+  .elstar-badge-info {
+    @apply elstar-badge bg-primary-100 text-primary-800 border border-primary-200;
+  }
+  
+  .elstar-badge-gray {
+    @apply elstar-badge bg-gray-100 text-gray-800 border border-gray-200;
+  }
+  
+  /* Navigation */
+  .elstar-sidebar {
+    @apply bg-white border-r border-gray-200 shadow-sm;
+  }
+  
+  .elstar-nav-item {
+    @apply flex items-center px-4 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 rounded-lg mx-2 my-1;
+  }
+  
+  .elstar-nav-item-active {
+    @apply bg-primary-100 text-primary-700 font-medium shadow-sm;
+  }
+  
+  .elstar-nav-submenu {
+    @apply ml-6 space-y-1;
+  }
+  
+  .elstar-nav-submenu-item {
+    @apply flex items-center px-4 py-2 text-sm text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 rounded-md;
+  }
+  
+  .elstar-nav-submenu-item-active {
+    @apply bg-primary-50 text-primary-600 font-medium;
+  }
+  
+  /* Header */
+  .elstar-header {
+    @apply bg-white border-b border-gray-200 shadow-sm;
+  }
+  
+  /* Metrics & Stats */
+  .elstar-stat-card {
+    @apply elstar-card p-6;
+  }
+  
+  .elstar-stat-value {
+    @apply text-3xl font-bold text-gray-900;
+  }
+  
+  .elstar-stat-label {
+    @apply text-sm font-medium text-gray-500 mt-1;
+  }
+  
+  .elstar-stat-change {
+    @apply text-xs font-medium mt-2 flex items-center;
+  }
+  
+  .elstar-stat-change-positive {
+    @apply elstar-stat-change text-success-600;
+  }
+  
+  .elstar-stat-change-negative {
+    @apply elstar-stat-change text-danger-600;
+  }
+  
+  /* Progress Bars */
+  .elstar-progress {
+    @apply w-full bg-gray-200 rounded-full h-2 overflow-hidden;
+  }
+  
+  .elstar-progress-bar {
+    @apply h-full transition-all duration-500 ease-out rounded-full;
+  }
+  
+  .elstar-progress-success {
+    @apply bg-success-500;
+  }
+  
+  .elstar-progress-warning {
+    @apply bg-warning-500;
+  }
+  
+  .elstar-progress-danger {
+    @apply bg-danger-500;
+  }
+  
+  .elstar-progress-primary {
+    @apply bg-primary-500;
+  }
+  
+  /* Tables */
+  .elstar-table {
+    @apply min-w-full divide-y divide-gray-200 bg-white;
+  }
+  
+  .elstar-table-header {
+    @apply bg-gray-50;
+  }
+  
+  .elstar-table-header-cell {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+  
+  .elstar-table-row {
+    @apply hover:bg-gray-50 transition-colors duration-200;
+  }
+  
+  .elstar-table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+  }
+  
+  /* Modals */
+  .elstar-modal-overlay {
+    @apply fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50;
+  }
+  
+  .elstar-modal {
+    @apply bg-white rounded-xl shadow-xl transform transition-all max-w-lg w-full mx-4;
+  }
+  
+  .elstar-modal-header {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
+  
+  .elstar-modal-body {
+    @apply px-6 py-4;
+  }
+  
+  .elstar-modal-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl;
+  }
+  
+  /* Alerts */
+  .elstar-alert {
+    @apply p-4 rounded-lg border;
+  }
+  
+  .elstar-alert-success {
+    @apply elstar-alert bg-success-50 border-success-200 text-success-800;
+  }
+  
+  .elstar-alert-warning {
+    @apply elstar-alert bg-warning-50 border-warning-200 text-warning-800;
+  }
+  
+  .elstar-alert-danger {
+    @apply elstar-alert bg-danger-50 border-danger-200 text-danger-800;
+  }
+  
+  .elstar-alert-info {
+    @apply elstar-alert bg-primary-50 border-primary-200 text-primary-800;
+  }
+  
+  /* Loading States */
+  .elstar-skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+  
+  .elstar-spinner {
+    @apply animate-spin rounded-full border-2 border-gray-200 border-t-primary-600;
+  }
+  
+  /* Responsive Utilities */
+  .elstar-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .elstar-grid {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  /* Chart Containers */
+  .elstar-chart-container {
+    @apply elstar-card p-6;
+  }
+  
+  .elstar-chart-header {
+    @apply flex items-center justify-between mb-4;
+  }
+  
+  .elstar-chart-title {
+    @apply text-lg font-semibold text-gray-900;
+  }
+  
+  /* Dashboard Specific */
+  .elstar-dashboard-header {
+    @apply mb-8;
+  }
+  
+  .elstar-dashboard-title {
+    @apply text-2xl font-bold text-gray-900 mb-2;
+  }
+  
+  .elstar-dashboard-subtitle {
+    @apply text-gray-600;
+  }
+  
+  .elstar-metric-grid {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8;
+  }
+
+/* Custom Scrollbar for Light Theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .elstar-card-body {
+    @apply p-4;
+  }
+  
+  .elstar-modal {
+    @apply mx-2;
+  }
+  
+  .elstar-container {
+    @apply px-2;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .elstar-sidebar,
+  .elstar-header {
+    display: none !important;
+  }
+  
+  .elstar-card {
+    @apply shadow-none border border-gray-300;
+  }
+}
