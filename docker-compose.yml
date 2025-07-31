@@ -1,0 +1,231 @@
+# =================================================================
+# ZIENSHIELD - DOCKER COMPOSE PARA PRODUCCIÓN
+# =================================================================
+
+version: '3.8'
+
+networks:
+  zienshield-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  backend-logs:
+    driver: local
+  nginx-logs:
+    driver: local
+
+services:
+  # =================================================================
+  # BACKEND API SERVICE
+  # =================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: zienshield-backend
+    hostname: zienshield-backend
+    restart: unless-stopped
+    
+    # Configuración de red
+    networks:
+      zienshield-network:
+        ipv4_address: 172.20.0.10
+    
+    # Mapeo de puertos (solo para acceso directo si necesario)
+    ports:
+      - "3001:3001"
+    
+    # Variables de entorno
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      
+      # Database Configuration
+      DB_HOST: ${DB_HOST:-localhost}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-zienshield}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSL: ${DB_SSL:-true}
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE:-24h}
+      
+      # Wazuh Configuration
+      WAZUH_API_URL: ${WAZUH_API_URL}
+      WAZUH_USERNAME: ${WAZUH_USERNAME}
+      WAZUH_PASSWORD: ${WAZUH_PASSWORD}
+      WAZUH_SSL_VERIFY: ${WAZUH_SSL_VERIFY:-true}
+      
+      # CORS Configuration
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost}
+      
+      # Rate Limiting
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-50}
+      RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX:-3}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_CONSOLE_ENABLED: ${LOG_CONSOLE_ENABLED:-true}
+      LOG_FILE_ENABLED: ${LOG_FILE_ENABLED:-true}
+    
+    # Volumes para logs persistentes
+    volumes:
+      - backend-logs:/app/logs
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Limits de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Necesario para logs
+    tmpfs:
+      - /tmp
+    
+    depends_on:
+      - redis-cache
+
+  # =================================================================
+  # FRONTEND SERVICE
+  # =================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3001}
+        REACT_APP_VERSION: ${REACT_APP_VERSION:-1.0.0}
+        REACT_APP_ENVIRONMENT: production
+    
+    container_name: zienshield-frontend
+    hostname: zienshield-frontend
+    restart: unless-stopped
+    
+    # Configuración de red
+    networks:
+      zienshield-network:
+        ipv4_address: 172.20.0.20
+    
+    # Mapeo de puertos
+    ports:
+      - "3000:80"
+    
+    # Volumes para logs
+    volumes:
+      - nginx-logs:/var/log/nginx
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    
+    # Limits de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # =================================================================
+  # REDIS CACHE SERVICE (Para sesiones y cache)
+  # =================================================================
+  redis-cache:
+    image: redis:7-alpine
+    container_name: zienshield-redis
+    hostname: zienshield-redis
+    restart: unless-stopped
+    
+    # Configuración de red
+    networks:
+      zienshield-network:
+        ipv4_address: 172.20.0.30
+    
+    # Configuración Redis
+    command: >
+      redis-server 
+      --maxmemory 128mb 
+      --maxmemory-policy allkeys-lru 
+      --appendonly yes
+      --appendfsync everysec
+    
+    # Volumes para persistencia
+    volumes:
+      - redis-data:/data
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Limits de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  redis-data:
+    driver: local
