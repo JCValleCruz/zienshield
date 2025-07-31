@@ -1,0 +1,108 @@
+# =================================================================
+# ZIENSHIELD - DOCKERIGNORE PARA OPTIMIZACIÓN DE BUILD
+# =================================================================
+
+# Archivos de entorno y configuración local
+.env*
+!.env.production.template
+.envrc
+
+# Logs y archivos temporales
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Cache directories
+.npm
+.eslintcache
+.parcel-cache
+.cache/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+docs/
+
+# Backup files
+*.backup*
+*.before*
+*.bak
+*.tmp
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+
+# Config files not needed in container
+.editorconfig
+.eslintrc*
+.prettierrc*
+.browserslistrc
+jest.config.*
+webpack.config.*
+
+# PM2 configuration (ya que usaremos Docker)
+ecosystem.config.js
+
+# Scripts de desarrollo
+scripts/
+*.sh
+
+# Archivos específicos del proyecto que no son necesarios
+backups/
+monitoring/data/
+web-monitoring/
+*.tar.gz
+
+# Frontend build (se construye en el Dockerfile)
+super-admin/frontend/build/
+super-admin/frontend/node_modules/
+
+# Backend node_modules (se instala en el Dockerfile)
+backend-unified/node_modules/
